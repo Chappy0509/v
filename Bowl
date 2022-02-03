@@ -1,0 +1,2262 @@
+function SetCookie(name, value) {
+	var argv=SetCookie.arguments;
+	var argc=SetCookie.arguments.length;
+	var expires=(argc > 2) ? argv[2] : null;
+	var path=(argc > 3) ? argv[3] : null;
+	//var domain=(argc > 4) ? argv[4] : null;
+	var domain=window.location.hostname;
+	if(domain == 'www.jeuxclic.com') domain=".jeuxclic.com";
+	else if(domain == 'm.jeuxclic.com') domain=".jeuxclic.com";
+	//var domain=".jeuxclic.com";
+	var secure=(argc > 5) ? argv[5] : false;
+	document.cookie=name+"="+escape(value)+
+		((expires==null) ? "" : ("; expires="+expires.toGMTString()))+
+		((path==null) ? "" : ("; path="+path))+
+		((domain==null) ? "" : ("; domain="+domain))+
+		((secure==true) ? "; secure" : "");
+}
+
+
+
+function getCookieVal(offset) {
+	var endstr=document.cookie.indexOf (";", offset);
+	if (endstr==-1) endstr=document.cookie.length;
+	return unescape(document.cookie.substring(offset, endstr));
+}
+
+
+
+function GetCookie(name) {
+	var arg=name+"=";
+	var alen=arg.length;
+	var clen=document.cookie.length;
+	var i=0;
+	while (i<clen) {
+		var j=i+alen;
+		if (document.cookie.substring(i, j)==arg) {
+			return getCookieVal (j);
+			if (test == 2) alert("GetCookie - Jeux id : " + getCookieVal(j));
+		}
+		i=document.cookie.indexOf(" ",i)+1;
+		if (i==0) break;
+	}	
+	return null;
+}
+
+
+
+
+// Jeux > cookies "Mes jeux"  
+// ==========================================================================================================================================
+function SetCookie_mj(c_name,value,expiredays) {
+	
+	//var test = 2;
+	
+	if (test == 2) alert('SetCookie_mj > c_name:'+c_name+' - value:'+value+' - expiredays:'+expiredays);
+
+	var exdate=new Date()
+	exdate.setDate(exdate.getDate()+expiredays)
+	var new_game_id = escape(value);
+	if(isNaN(new_game_id) == true) return; // sécurité
+	
+	// 1- On vérifie les jeux déjà présents.
+    var all_games = checkCookie_mj();
+
+	// 2- On met ces jeux dans un tableau
+	if(all_games != '') {
+		
+		if (test == 2) alert('1- Cookie existant - all_games : "'+all_games+'"');
+
+		var all_games_tab = all_games.split("+");
+		
+		// Limite max
+		var limite_mes_jeux_max = 50;
+		var nb_mes_jeux = all_games_tab.length;
+		var empties = all_games_tab.length - all_games_tab.filter(String).length;
+		var all_games_tab_count = nb_mes_jeux - empties;
+		/*
+		if(all_games_tab_count > limite_mes_jeux_max) {
+			if (test == 2) alert('1- Trop de jeux ('+all_games_tab_count+')');
+			trop_de_jeux_confirmation();
+		}
+		else {
+			if (test == 2) alert('1- Nb jeux ok ! ('+all_games_tab_count+')');
+		}
+		*/
+
+		
+			
+		// On rajoute ce jeu
+		if(all_games_tab.indexOf(new_game_id) > -1) {	 // A FAIRE : faire un fonction (utilisée dans "mes jeux" également ...)
+			
+			if (test == 2) alert('2- Position du jeu dans le tableau "all_games_tab" : '+all_games_tab.indexOf(new_game_id));
+
+			delete all_games_tab[all_games_tab.indexOf(new_game_id)]; // Suppression dans le tableau
+			var all_games = all_games_tab.join("+"); // On reconstruit le cookie
+			// Suppression des + en début ou fin de chaîne.
+			if(all_games.substring(0, 1) == "+") { var all_games = all_games.substring(1); }
+			if(all_games.charAt(all_games.length-1) == "+") { var all_games = all_games.substring(0,all_games.length-1); }
+
+			//document.cookie = c_name+ "=" +all_games+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString());
+			var domain=window.location.hostname;
+			if(domain == 'www.jeuxclic.com') domain=".jeuxclic.com";
+			document.cookie = c_name+ "=" +all_games+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString() + ";domain="+domain+";path=/")
+						
+								
+			if (test == 2) alert('2- Jeu suprimé de Mes Jeux');
+			
+			document.getElementById('ajouter_a_mes_jeux').style.backgroundPosition='0px 0px'; 
+			document.getElementById('ajouter_a_mes_jeux').title = 'Ajouter dans "Mes Jeux"';
+			
+			supprimer_de_mes_jeux_confirmation();
+			
+			if (test == 2) alert('2-(supression) avant Ajax_Mj_DB : '+new_game_id+' - '+all_games+' - 1');
+
+			if(all_games_tab_count <= 50) Ajax_Mj_DB(new_game_id,all_games,'1');
+			//if (test == 2) alert('2- Update cookie - all_games : '+all_games);
+			
+		}
+		else {
+			
+		    if(all_games_tab_count < limite_mes_jeux_max) {
+			
+				if (test == 2) alert('2- '+new_game_id+' est un nouveau jeu dans Mes Jeux');
+				
+				/* jeux vide ? */
+				var tous_les_jeux_tab = readCookie('Visites');
+				var tous_les_jeux_tab = tous_les_jeux_tab.split("+");
+				var nb_mes_jeux = tous_les_jeux_tab.length;
+				var empties = tous_les_jeux_tab.length - tous_les_jeux_tab.filter(String).length;
+				var nb_mes_jeux_no_empties = nb_mes_jeux - empties;
+				if(test == 2) alert('nb_mes_jeux:'+nb_mes_jeux+' - empties:'+empties+' = nb_mes_jeux_no_empties:'+nb_mes_jeux_no_empties+' - tous_les_jeux_tab:'+tous_les_jeux_tab);
+				var nb_mes_jeux = nb_mes_jeux_no_empties;
+	
+	
+				all_games_tab.push(new_game_id);
+				var all_games = all_games_tab.join("+");	
+				// Suppression des + en début ou fin de chaîne.
+				if(all_games.substring(0, 1) == '+') { var all_games = all_games.substring(1); }
+				if(all_games.charAt(all_games.length-1) == "+") { var all_games = all_games.substring(0,all_games.length-1); }
+				
+				//document.cookie = c_name+ "=" +all_games+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString())
+				//document.cookie = c_name+ "=" +all_games+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString() + ";domain=.jeuxclic.com;path=/")
+
+				var domain=window.location.hostname;
+				if(domain == 'www.jeuxclic.com') domain=".jeuxclic.com";
+				document.cookie = c_name+ "=" +all_games+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString() + ";domain="+domain+";path=/")
+	
+				
+				if (test == 2) alert('2- Update cookie - all_games : '+all_games);
+				
+				document.getElementById('ajouter_a_mes_jeux').style.backgroundPosition='-16px 0'; 
+				document.getElementById('ajouter_a_mes_jeux').title = 'Ce jeu fait parti de vos jeux favoris.';
+				
+				ajouter_a_mes_jeux_confirmation();
+				
+				if (test == 2) alert('2- (ajout) avant Ajax_Mj_DB : '+new_game_id+' - '+all_games+' - 1');
+				
+				if(all_games_tab_count <= 50) Ajax_Mj_DB(new_game_id,all_games,'0');
+	
+				// INSERTION SQL
+				/*
+				$ip = $_SERVER["HTTP_X_REMOTE_IP"];
+				$today = date('Y-m-d H:i:s');
+				mysql_query("INSERT INTO mesjeux(id_jeu,cookie,sup,ip,date) VALUES('$id','$Visites','0','$ip','$today')");
+				*/
+				//
+			}
+			else {
+				if (test == 2) alert('2- '+all_games_tab_count+' est supérieur à la limite ('+limite_mes_jeux_max+'). Pas d\'ajout.');
+				trop_de_jeux_confirmation();
+			}
+			
+		}
+		
+	
+	}
+	else  { // Pas de cookie : première insertion
+		
+		if (test == 2) alert('1- Cookie n\'existe pas - all_games : "'+all_games+'"');
+
+
+		var domain=window.location.hostname;
+		if(domain == 'www.jeuxclic.com') domain=".jeuxclic.com";
+		document.cookie = c_name+ "=" +value+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString() + ";domain="+domain+";path=/")
+
+    	var all_games = checkCookie_mj();
+		document.getElementById('ajouter_a_mes_jeux').style.backgroundPosition='-16px 0'; 
+		document.getElementById('ajouter_a_mes_jeux').title = 'Ce jeu fait parti de vos jeux favoris.';
+		ajouter_a_mes_jeux_confirmation();
+
+		if (test == 2) alert('1.2- Pas de cookie > New cookie - all_games : '+all_games);
+
+	}
+	
+    /*
+	if (value) {
+        var all_games_tab = new Array
+        all_games_tab.push(value) + ' '; // Ajoute le nouveau prénom ainsi qu'un espace juste après
+    }
+	else {  
+		//break; // On quitte la boucle
+	}
+	*/
+	/*
+	if (all_games_tab){
+		for(var i = 0; i < all_games_tab.length; i++){                  
+			if (test == 2) alert(all_games_tab); // Affiche les prénoms à la suite
+		} 
+	}
+	*/
+
+	//if (test == 2) alert('c_name : '+c_name+' - Jeux id : '+value);
+
+}
+
+
+
+function Ajax_Mj_DB(new_game_id,all_games,add_sup) { 
+  
+  if (test == 2) alert('Mes jeux (insertion SQL) - Ajax_Mj_DB : '+new_game_id+','+all_games+','+add_sup);
+  
+  if(all_games.length <= 450) {
+	  
+	  if (test == 2) alert('Mes jeux (insertion SQL) > Longueur de cookie OK ! ('+all_games.length+').');
+  
+	  var OAjax;
+	  if (window.XMLHttpRequest) OAjax = new XMLHttpRequest();
+	  else if (window.ActiveXObject) OAjax = new ActiveXObject('Microsoft.XMLHTTP');
+	  OAjax.open('POST',"../../include/p_jeux/mesjeux_db_add_sup.php",true);
+	  OAjax.onreadystatechange = function()
+	  {
+		  if (OAjax.readyState == 4 && OAjax.status==200)
+		  {
+			  if (document.getElementById)
+			  {   
+				  /**/
+				  if (OAjax.responseText =='true') { // OK
+						document.getElementById('msggmc').innerHTML='<font color=GREEN>'+OAjax.responseText+'</font>';
+				  }
+				  else{ // PAS OK
+						document.getElementById('msggmc').innerHTML='<font color=RED>'+OAjax.responseText+'</font>';
+				  }
+				  
+			  }     
+		  }
+	  }
+	  OAjax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=ISO-8859-1");
+	  //OAjax.send('Id_cat='+Id_cat+'$Id_cat2='+Id_cat2);  
+	  
+	  if (test == 2) alert('Mes jeux (insertion SQL) - Ajax_Mj_DB : new_game_id='+new_game_id+'&all_games='+encodeURI(all_games)+'&add_sup='+add_sup);
+	  
+	  OAjax.send('new_game_id='+new_game_id+'&all_games='+encodeURI(all_games)+'&add_sup='+add_sup);  
+	  //OAjax.send('new_game_id='+new_game_id);  
+  }
+  else {
+	  if (test == 2) alert('Mes jeux (insertion SQL) > Longueur de cookie trop grande ('+all_games.length+').');
+  }
+} 
+
+
+
+function SetCookie_mj_supprimer(c_name,value,expiredays) {
+
+	var test = 0;
+
+	var exdate=new Date()
+	exdate.setDate(exdate.getDate()+expiredays)
+	var new_game_id = escape(value);
+	if(isNaN(new_game_id) == true) return; // sécurité
+	
+	// 1- On vérifie les jeux déjà présents.
+    var all_games = checkCookie_mj();
+
+	// 2- On met ces jeux dans un tableau
+	if(all_games != '') {
+		
+		var all_games_tab = all_games.split("+");
+
+		// On supprime ce jeu
+
+		if(all_games_tab.indexOf(new_game_id) > -1) {	 // A FAIRE : faire un fonction (utilisée dans "mes jeux" également ...)
+
+			delete all_games_tab[all_games_tab.indexOf(new_game_id)]; // Suppression dans le tableau
+			
+			var all_games = all_games_tab.join("+"); // On reconstruit le cookie
+			// Suppression des + en début ou fin de chaîne.
+			if(all_games.substring(0, 1) == '+') { var all_games = all_games.substring(1); }
+			if(all_games.charAt(all_games.length-1) == "+") { var all_games = all_games.substring(0,all_games.length-1); }
+			if(test == 2) alert('all_games_tab.join : "'+all_games+'"');
+			
+			var  all_games = all_games.replace(/ +(?= )/g,''); // On élimine les espaces en trop
+			var  all_games = all_games.trim();
+			if(test == 2) alert('all_games.replace spaces : "'+all_games+'"');
+
+			var domain=window.location.hostname;
+			if(domain == 'www.jeuxclic.com') domain=".jeuxclic.com";
+			document.cookie = c_name+ "=" +all_games+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString() + ";domain="+domain+";path=/")
+			
+			//document.cookie = c_name+ "=" +all_games+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString());
+			//document.cookie = c_name+ "=" +all_games+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString() + ";domain=.jeuxclic.com;path=/")
+
+			document.getElementById('game_'+new_game_id+'').style.display = "none";
+
+			if(test == 2) alert('SetCookie_mj_supprimer : "'+all_games+'"');
+			
+			//var tous_les_jeux_tab = readCookie('Visites'); //all_games et del cette ligne
+			var  tous_les_jeux_tab = all_games.replace(/ +(?= )/g,'');
+			var tous_les_jeux_tab = tous_les_jeux_tab.split("+");
+			var nb_mes_jeux = tous_les_jeux_tab.length;
+			
+			/* jeux vide ? */
+			var empties = tous_les_jeux_tab.length - tous_les_jeux_tab.filter(String).length;
+			if(test == 2) alert('nb_mes_jeux:'+nb_mes_jeux+' - tous_les_jeux_tab:'+tous_les_jeux_tab);
+			var nb_mes_jeux_no_empties = nb_mes_jeux - empties;
+			if(test == 2) alert('nb_mes_jeux:'+nb_mes_jeux+' - empties:'+empties+' = nb_mes_jeux_no_empties:'+nb_mes_jeux_no_empties+' - tous_les_jeux_tab:'+tous_les_jeux_tab);
+			var nb_mes_jeux = nb_mes_jeux_no_empties;
+			
+			// Car tous_les_jeux_tab.length est à 1 minimum
+			if(tous_les_jeux_tab == "") var nb_mes_jeux = 0;
+			
+			//document.getElementById('mesjeux_nb_jeux').innerHTML='('+nb_mes_jeux+')';
+			
+			// A FAIRE 0 : gérer : if($nb_mes_jeux>99) $nb_mes_jeux = '+99';
+
+			if(nb_mes_jeux == 1) {
+				document.getElementById('filarianenbjeux').innerHTML='('+nb_mes_jeux+' jeu)';
+				document.getElementById('mesjeux_nb_jeux').innerHTML='('+nb_mes_jeux+')';
+			}
+			else if(nb_mes_jeux > 1) {
+				if(nb_mes_jeux >= 100) {
+					document.getElementById('filarianenbjeux').innerHTML='(+99 jeux)';
+					document.getElementById('mesjeux_nb_jeux').innerHTML='(+99)';
+				}
+				else {
+					document.getElementById('filarianenbjeux').innerHTML='('+nb_mes_jeux+' jeux)';
+					document.getElementById('mesjeux_nb_jeux').innerHTML='('+nb_mes_jeux+')';
+				}
+			}
+			else {
+				document.getElementById('filarianenbjeux').innerHTML='';
+				document.getElementById('mesjeux_nb_jeux').innerHTML='';
+			}
+			
+			if(nb_mes_jeux <= 50) Ajax_Mj_DB(new_game_id,all_games,'1');
+
+			if(all_games == '') {
+				if(userLang == 'fr-FR') document.getElementById("mesjeux_cookies_message").innerHTML = "<div class=\"mesjeux_vide\"><div align=\"left\">Pour ajouter et retrouver ici vos jeux favoris, cliquer sur l\'étoile <span class=\"mesjeux_tuto_star\"><\/span> présente à côté du titre du jeu.<\/div><br><div align=\"left\"><img src=\"images\/mes-jeux-tuto-etoile.png\" title=\"Page de jeux : ajouter à Mes Jeux\"><\/div><br><div align=\"left\"><img src=\"images\/mes-jeux-tuto-menu-bouton.png\" title=\"Bouton menu Mes Jeux\"><\/div><\/div>";
+				else document.getElementById("mesjeux_cookies_message").innerHTML = "<div class=\"mesjeux_vide\"><div align=\"left\">To add and find your favorite games here, click on the star <span class=\"mesjeux_tuto_star\"><\/span> just after game title.<\/div><br><div align=\"left\"><img src=\"images\/mes-jeux-tuto-etoile.png\"><\/div><br><div align=\"left\"><img src=\"images\/mes-jeux-tuto-menu-bouton.png\"><\/div><\/div>";
+			}
+
+		}
+	}
+}
+
+
+/*
+function display_none_game(id_game) {
+	alert('Display none : '+id_game);
+	document.getElementById('game_'+id_game).style.display = "none";
+}
+*/
+
+
+function readCookie(name) {
+    name += '=';
+    for (var ca = document.cookie.split(/;\s*/), i = ca.length - 1; i >= 0; i--)
+        if (!ca[i].indexOf(name))
+            return ca[i].replace(name, '');
+}
+
+<!-- Langue  A FAIRE GET cookie puis get nav en second choix -->
+var userLang = navigator.language || navigator.userLanguage; 
+//alert ("The language is: " + userLang); // A FAIRE : 
+
+
+function ajouter_a_mes_jeux_confirmation() {
+	
+	if(are_cookies_enabled()) {
+		if(userLang == 'fr-FR') document.getElementById('ajouter_a_mes_jeux_confirmation').innerHTML = "Ajouté dans <a href=\"categorie-jeux.php?cat=mes-jeux\">Mes Jeux</a>";
+		else document.getElementById('ajouter_a_mes_jeux_confirmation').innerHTML = "<a href=\"categorie-jeux.php?cat=mes-jeux\">OK !</a>";
+		var conf_delay = 1800;
+	}
+	else {
+		if(userLang == 'fr-FR') document.getElementById('ajouter_a_mes_jeux_confirmation').innerHTML = "<img src=\"images\/error2.png\"> <span class=\"red\">Veuillez <a href=\"categorie-jeux.php?cat=mes-jeux\" target=\"_blank\">activer les cookies de votre navigateur<\/a><\/span>";
+		else document.getElementById('ajouter_a_mes_jeux_confirmation').innerHTML = "<img src=\"images\/error2.png\"> <span class=\"red\">Please <a href=\"c.php?p=premiers-pas\" target=\"_blank\">enable cookies in your browser<\/a><\/span>";
+		var conf_delay = 5000;
+	}
+	
+	var tous_les_jeux_tab = readCookie('Visites');
+	var tous_les_jeux_tab = tous_les_jeux_tab.split("+");
+	var nb_mes_jeux = tous_les_jeux_tab.length;
+	if(test == 2) alert('nb_mes_jeux:'+nb_mes_jeux);
+
+	/* jeux vide ? */
+	var empties = tous_les_jeux_tab.length - tous_les_jeux_tab.filter(String).length;
+	var nb_mes_jeux_no_empties = nb_mes_jeux - empties;
+	if(test == 2) alert('nb_mes_jeux:'+nb_mes_jeux+' - empties:'+empties+' = nb_mes_jeux_no_empties:'+nb_mes_jeux_no_empties+' - tous_les_jeux_tab:'+tous_les_jeux_tab);
+	var nb_mes_jeux = nb_mes_jeux_no_empties;
+
+	//document.getElementById('mesjeux_nb_jeux').innerHTML='('+nb_mes_jeux+')';
+	
+	if(nb_mes_jeux >= 1) {
+		if(nb_mes_jeux >= 100) document.getElementById('mesjeux_nb_jeux').innerHTML='(+99)';
+		else document.getElementById('mesjeux_nb_jeux').innerHTML='('+nb_mes_jeux+')';
+	}
+	else document.getElementById('mesjeux_nb_jeux').innerHTML='';
+	
+	document.getElementById('ajouter_a_mes_jeux_confirmation').style.opacity = 1;
+	var opacity = 1;
+	window.setTimeout(function() { fader(opacity); } , conf_delay);
+}
+
+
+
+function supprimer_de_mes_jeux_confirmation() { //  A FAIRE 0 : Bug : si déjà ajouté dans mes jeux puis suppression dans la foulée : erreur affichage confirmation.
+	
+	if(userLang == 'fr-FR') document.getElementById('ajouter_a_mes_jeux_confirmation').innerHTML = "Supprimé de <a href=\"categorie-jeux.php?cat=mes-jeux\">Mes Jeux</a>";
+	else document.getElementById('ajouter_a_mes_jeux_confirmation').innerHTML = "<a href=\"categorie-jeux.php?cat=mes-jeux\">OK !</a>";
+	
+	var tous_les_jeux_tab = readCookie('Visites');
+	var tous_les_jeux_tab = tous_les_jeux_tab.split("+");
+	var nb_mes_jeux = tous_les_jeux_tab.length;
+	if(test == 2) alert('nb_mes_jeux:'+nb_mes_jeux);
+	
+	/* jeux vide ? */
+	var empties = tous_les_jeux_tab.length - tous_les_jeux_tab.filter(String).length;
+	var nb_mes_jeux_no_empties = nb_mes_jeux - empties;
+	if(test == 2) alert('nb_mes_jeux:'+nb_mes_jeux+' - empties:'+empties+' = nb_mes_jeux_no_empties:'+nb_mes_jeux_no_empties+' - tous_les_jeux_tab:'+tous_les_jeux_tab);
+	var nb_mes_jeux = nb_mes_jeux_no_empties;
+	
+	document.getElementById('mesjeux_nb_jeux').innerHTML='('+nb_mes_jeux+')';
+
+	document.getElementById('ajouter_a_mes_jeux_confirmation').style.opacity = 1;
+	var opacity = 1;
+	window.setTimeout(function() { fader(opacity); } , 1800);
+}
+
+
+
+function trop_de_jeux_confirmation() {
+	
+	if(userLang == 'fr-FR') document.getElementById('ajouter_a_mes_jeux_confirmation').innerHTML = "Trop de jeux dans <a href=\"categorie-jeux.php?cat=mes-jeux\">Mes Jeux</a>";
+	else document.getElementById('ajouter_a_mes_jeux_confirmation').innerHTML = "Too much games in <a href=\"categorie-jeux.php?cat=mes-jeux\">My Games</a>";
+	
+	document.getElementById('mesjeux_nb_jeux').innerHTML='<span style="color:#FF0000;"('+nb_mes_jeux+')</span>';
+	document.getElementById('ajouter_a_mes_jeux_confirmation').style.opacity = 1;
+	var opacity = 1;
+	window.setTimeout(function() { fader(opacity); } , 1800);
+}
+
+
+
+function fader(opacity) {
+	var opacity = opacity-0.03;
+	opacity.toFixed(2);
+	document.getElementById('ajouter_a_mes_jeux_confirmation').style.opacity = opacity;
+	if(opacity>=0) { window.setTimeout(function() { fader(opacity); } , 40); }
+}
+
+
+
+function getCookie_mj(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1);
+        if (c.indexOf(name) == 0) {
+			return c.substring(name.length,c.length);
+		}
+    }
+    return "";
+}
+
+
+
+function checkCookie_mj(id_jeu) {
+    var all_id = getCookie_mj("Visites");
+	var all_id = all_id.replace(/ {2,}/g, ' ');
+	if (test == 2) alert("Jeux id (checkCookie_mj) : " + all_id);
+	return all_id;
+}
+
+
+
+function readCookie_mj(id_jeu) {
+
+	var new_game_id = escape(id_jeu);
+	if(isNaN(new_game_id) == true) return; // sécurité
+	
+	// 1- On vérifie les jeux déjà présents.
+    var all_games = checkCookie_mj();
+	
+	// 2- On met ces jeux dans un tableau
+	if(all_games != '') {
+		if (test == 2) alert('1- Cookie existant - all_games : "'+all_games+'"');
+		var all_games_tab = all_games.split("+");
+		if(all_games_tab.indexOf(new_game_id) > -1) {		
+			if (test == 2) alert('2- '+new_game_id+' est déjà dans Mes Jeux.');
+			document.getElementById('ajouter_a_mes_jeux').style.backgroundPosition='-16px 0'; 
+			document.getElementById('ajouter_a_mes_jeux').title = 'Ce jeu fait parti de vos jeux favoris.';
+		}
+	}
+}
+
+
+
+<!-- Ajouter au favoris COOKIE -->
+/*
+function favorisadd(id) {
+
+var base_url = url.substring(0, xend);
+url = base_url + 'cookies_add.php?id=' + escape(id);
+newwindow=window.open(
+url,'name2', 'status=no, toolbar=no, scrollbars=yes, titlebar=no, menubar=no, resizable=no, width=1, height=1, directories=no, location=no');
+
+//document.getElementById('jeu_id_box').innerHTML='<strong>You changed me</strong>';
+document.getElementById('jeuxajoute').innerHTML='<strong>Jeu ajout&eacute; &agrave; <a href="mes-jeux.php" title="Afficher mes jeux favoris">Mes Jeux</a> !</strong><br>';
+
+if (window.focus) {newwindow.focus()}
+return false;
+
+}
+
+
+
+<!-- Supprimer des favoris COOKIE -->
+function favorissup(id) {
+
+var base_url = url.substring(0, xend);
+url = base_url + 'cookies_sup.php?id='+ escape(id);
+newwindow=window.open(
+url,'name3', 'status=no, toolbar=no, scrollbars=yes, titlebar=no, menubar=no, resizable=no, width=1, height=1, directories=no, location=no');
+
+//document.getElementById('jeu_id_box').innerHTML='<strong>You changed me</strong>';
+//document.getElementById('jeuxsupprime').innerHTML='<strong>Jeu supprim&eacute; de vos jeux favoris</strong><br>';
+// A mettre dans le code de la page de destination :
+// <div id=\"jeuxsupprime\" style=\"display:inline;\">AFFICHAGE ICI</div>
+
+if (window.focus) {newwindow.focus()}
+return false;
+
+}
+*/
+
+
+// Jeux > outils
+// ==========================================================================================================================================
+
+function Resize(anim,id_games,size,widthorigine,heightorigine) {
+	
+	if(test == 1) alert('Resize > variables - anim : '+anim+' - id_games : '+id_games+' - size : '+size+' - widthorigine : '+widthorigine+' - heightorigine : '+heightorigine+ ' - Domain name : '+window.location.hostname);
+
+	/* Hauteur additionnelle proportionnelle */
+	var sizeh = (size/widthorigine)*heightorigine;
+	
+	// vérouillage de la taille maximale
+	var screenwidthmax = screen.availWidth;
+	//alert(screenwidthmax);
+	
+   // Zoom - ou + Flash object named "anim" or Div named "flash"
+   if (/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)){
+   	   var width = document.getElementById('flash').style.width;
+	   var height= document.getElementById('flash').style.height;
+
+	   // If 100% ajust to original sizes
+	   if(width=='100%') {
+		   var width = widthorigine;
+		   var height = heightorigine;
+	   }
+
+	   var width = parseInt(width,10)+ parseInt(size,10);
+	   var height = parseInt(height,10)+ parseInt(sizeh,10);
+
+	   if(width>330 && width<screenwidthmax) {
+	   document.getElementById('flash').style.width = width+'px'; void(0); 
+	   document.getElementById('flash').style.height = height+'px'; void(0); 
+	   }
+	   else { 
+	   		//alert(width);
+	   		width = parseInt(width)-parseInt(size);
+	   		height = parseInt(height)-parseInt(sizeh);
+	   		//alert(width);
+	   }
+   }
+
+   else if(/MSIE[\/\s](\d+\.\d+)/.test(navigator.userAgent)) { 
+   	   var width = document.getElementById(anim).width;
+	   var height= document.getElementById(anim).height;
+
+	   // If 100% ajust to original sizes
+	   if(width=='100%') {
+		   var width = widthorigine;
+		   var height = heightorigine;
+	   }
+	   var width = parseInt(width,10)+ parseInt(size,10);
+	   var height = parseInt(height,10)+ parseInt(sizeh,10);
+	   
+	   if(width>340 && width<screenwidthmax) {
+	   document.getElementById(anim).width = width; void(0); 
+	   document.getElementById(anim).height = height; void(0); 
+	   }
+	   else { 
+	   		//alert(width);
+	   		width = parseInt(width)-parseInt(size);
+	   		height = parseInt(height)-parseInt(sizeh);
+	   		//alert(width);
+	   }
+   }
+   
+   else {
+
+		var width = document.getElementById('flash').style.width;
+		var height= document.getElementById('flash').style.height;
+		
+		var width = parseInt(width,10)+ parseInt(size,10);
+		var height = parseInt(height,10)+ parseInt(sizeh,10);
+		
+		if(width>340 && width<screenwidthmax) {
+		   document.getElementById('flash').style.width = width+'px'; void(0); 
+		   document.getElementById('flash').style.height = height+'px'; void(0); 
+		}
+		else { 
+			//alert(width);
+			width = parseInt(width)-parseInt(size);
+			height = parseInt(height)-parseInt(sizeh);
+			if(test == 1) alert('Resize > Taille jeu dépasse l\'écran : '+width+' - '+height);
+		}
+
+   } // A FAIRE : bloquer si dépasse l'écran.
+   // A FAIRE : sécurité générale
+
+	// Add cookies
+	var concatenation = id_games+"|"+width+"|"+height;
+	//alert('concatenation:'+concatenation);
+	var pathname=location.pathname;
+	var myDomain=pathname.substring(0,pathname.lastIndexOf('/')) +'/';
+	var date_exp = new Date();
+	date_exp.setTime(date_exp.getTime()+(3650*24*3600*1000));
+	// 365 days
+	SetCookie(id_games,concatenation,date_exp,myDomain);
+
+   	// Add cookies > taille auto : "Off"
+	var concatenation_autosize_on_off = id_games+'|0';
+	SetCookie('auto_size_'+id_games,concatenation_autosize_on_off,date_exp,myDomain);	
+	if(test == 1) alert('Resize > Cookie auto_size_'+id_games+' get "Off" : '+concatenation+' - date_exp : '+date_exp+' + myDomain : '+myDomain);
+
+	// Auto_size = "off"
+	document.getElementById("survol_zauto_id").className="survol_zauto";
+
+	// Centrage du jeu
+	//alert('GameCentrage:'+width);
+	GameCentrage(width);
+
+}
+
+
+
+function Resize_embed(anim,id_games,size,widthorigine,heightorigine) {
+
+	if(test == 1) alert('Resize_embed > variables - anim : '+anim+' - id_games : '+id_games+' - size : '+size+' - widthorigine : '+widthorigine+' - heightorigine : '+heightorigine);
+
+	/* Hauteur additionnelle proportionnelle */
+	var sizeh = (size/widthorigine)*heightorigine;
+	
+	// vérouillage de la taille maximale
+	var screenwidthmax = screen.availWidth;
+	//alert(screenwidthmax);
+	
+   // Zoom - ou + Flash object named "anim" or Div named "flash"
+   if (/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)){
+		var width = document.getElementById('flash').style.width;
+	   var height= document.getElementById('flash').style.height;
+
+	   // If 100% ajust to original sizes
+	   if(width=='100%') {
+		   var width = widthorigine;
+		   var height = heightorigine;
+	   }
+
+	   var width = parseInt(width,10)+ parseInt(size,10);
+	   var height = parseInt(height,10)+ parseInt(sizeh,10);
+
+	   if(width>330 && width<screenwidthmax) {
+	   document.getElementById('flash').style.width = width+'px'; void(0); 
+	   document.getElementById('flash').style.height = height+'px'; void(0); 
+	   }
+	   else { 
+	   		//alert(width);
+	   		width = parseInt(width)-parseInt(size);
+	   		height = parseInt(height)-parseInt(sizeh);
+	   		//alert(width);
+	   }
+   }
+
+   else if(/MSIE[\/\s](\d+\.\d+)/.test(navigator.userAgent)) { 
+		var width = document.getElementById(anim).width;
+	   var height= document.getElementById(anim).height;
+
+	   // If 100% ajust to original sizes
+	   if(width=='100%') {
+		   var width = widthorigine;
+		   var height = heightorigine;
+	   }
+	   var width = parseInt(width,10)+ parseInt(size,10);
+	   var height = parseInt(height,10)+ parseInt(sizeh,10);
+	   
+	   if(width>340 && width<screenwidthmax) {
+	   document.getElementById(anim).width = width; void(0); 
+	   document.getElementById(anim).height = height; void(0); 
+	   }
+	   else { 
+	   		//alert(width);
+	   		width = parseInt(width)-parseInt(size);
+	   		height = parseInt(height)-parseInt(sizeh);
+	   		//alert(width);
+	   }
+   }
+   
+   else {
+		
+		var width = document.getElementById('flash').style.width;
+		var height= document.getElementById('flash').style.height;
+		
+		var width = parseInt(width,10)+ parseInt(size,10);
+		var height = parseInt(height,10)+ parseInt(sizeh,10);
+		
+		if(width>340 && width<screenwidthmax) {
+		   document.getElementById('flash').style.width = width+'px'; void(0); 
+		   document.getElementById('flash').style.height = height+'px'; void(0); 
+		}
+		else { 
+			//alert(width);
+			width = parseInt(width)-parseInt(size);
+			height = parseInt(height)-parseInt(sizeh);
+			if(test == 1) alert('Resize > Taille jeu dépasse l\'écran : '+width+' - '+height);
+		}
+
+   }
+   // A FAIRE : bloquer si dépasse l'écran.
+   // A FAIRE : sécurité générale
+	
+	
+	// Add cookies
+	var concatenation = width+"|"+height;
+	//alert('concatenation:'+concatenation);
+	var pathname=location.pathname;
+	var myDomain=pathname.substring(0,pathname.lastIndexOf('/')) +'/';
+	var date_exp = new Date();
+	date_exp.setTime(date_exp.getTime()+(3650*24*3600*1000));
+	// 365 days
+	SetCookie('auto_size_embed',concatenation,date_exp,myDomain);
+
+	document.getElementById('embed_size_display').innerHTML = width+' X '+height;
+
+	if(test == 1) alert('Resize_embed > Cookie auto_size_embed OK, concatenation : '+concatenation+' - date_exp : '+date_exp+' + myDomain : '+myDomain);
+
+	// Auto_size = "off"
+	//document.getElementById("survol_zauto_id").className="survol_zauto";
+
+	// Centrage du jeu
+	//alert('GameCentrage:'+width);
+	//GameCentrage(width);
+
+}
+
+
+
+function GetSize(id_games,game_size_width_dev,game_size_height_dev) {
+	
+	//var test=1;
+	
+	// Embed
+	if(id_games == 'embed') {
+		
+		if(test == 1) alert('Getsize_embed ( '+id_games+' - '+game_size_width_dev+' - '+game_size_height_dev+' )');
+		
+		var auto_size_embed = GetCookie('auto_size_embed');
+		
+		if (auto_size_embed) {
+			var b = auto_size_embed.split('|');
+			var width = b[0];
+			var height = b[1];
+
+			if(test == 1) alert('width : '+width+' - height : '+width);
+		
+			if(isNaN(width) || isNaN(height)) {
+
+				if(test == 1) alert('width ou height not exists');
+
+				var width = game_size_width_dev;
+				var height = game_size_height_dev;
+
+				if(test == 1) alert('width : '+width+' - height : '+height);
+
+			}
+											
+		}
+		else {
+			var width = game_size_width_dev;
+			var height = game_size_height_dev;
+		}
+		
+		document.getElementById('embed_size_display').innerHTML = width+' X '+height;
+
+		if(test == 1) alert('auto_size_embed_width : '+width+' - auto_size_embed_height : '+height);
+
+		var navigateur = navigator.userAgent.toLowerCase();
+
+		if (/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)){ // A FAIRE 0 : les autres agents (nouveau script)
+			//   alert("ff "+width+" - "+height)
+			document.getElementById('flash').style.width = width+'px'; void(0); 
+			document.getElementById('flash').style.height = height+'px'; void(0); 
+		}
+
+		else if(/MSIE[\/\s](\d+\.\d+)/.test(navigator.userAgent)) { 
+			document.getElementById('anim').width = width; void(0); 
+			document.getElementById('anim').height = height; void(0); 
+		}
+
+		else {
+			document.getElementById('flash').style.width = width+'px'; void(0); 
+			document.getElementById('flash').style.height = height+'px'; void(0); 
+			//alert('Mise a jour de la taille OK.');
+		}
+
+		if(test == 1) alert('Taille ajustée au démarrage');
+
+		// Centrage du jeu
+		GameCentrage(width);
+		if(test == 1) alert('Jeu centré');
+
+	} // Embed:fin
+	else {
+	
+		if(test == 1) alert('GetSize > variables - id_games : '+id_games+' - game_size_width_dev : '+game_size_width_dev+' - game_size_height_dev : '+game_size_height_dev);
+		  
+		//if(test == 1) alert('auto_size == 0');
+		//auto_size = 0;
+		
+		// Auto_sizing : 0 ou 1
+		var auto_size_id_games = GetCookie('auto_size_'+id_games);
+		if (auto_size_id_games) {
+			if(test == 1) alert('GetSize > Cookie Autosize brut : '+auto_size_id_games);		
+			var b = auto_size_id_games.split('|');
+			var auto_size = b[1];
+			if(test == 1) alert('GetSize > Cookie Autosize >  extracted - id_games : '+id_games+' - auto_size : '+auto_size);		
+		}
+		else {
+			auto_size = 0;
+		}
+		//if(test == 1) alert('Kikoo'+b+' - auto_size_id_games : '+auto_size_id_games);
+		//if(test == 1) alert('GetSize > Autosize > cookie auto_size - auto_size : '+auto_size);
+	
+		if (auto_size_id_games && auto_size == 1) {
+	
+			if(test == 1) alert('auto_size_id_games : '+auto_size_id_games+' - auto_size : '+auto_size);		
+
+			Fullsize('anim',id_games,game_size_width_dev,game_size_height_dev);
+			var b = auto_size_id_games.split('|');
+			var auto_size = b[1];
+			// A FAIRE > sécurité de taille : si le cookie donne une taille minuscule, ou invraissemblable alors mettre taille par défaut.	
+	
+		}
+		else {
+		
+			if(test == 1) alert('GetSize > Cookie Autosize n\'existe pas ou auto_size=0 : on prend le cookie manuel ou les dimensions par défaut.');
+	
+			size_id_games=GetCookie(id_games);
+					
+			if (size_id_games && size_id_games.indexOf('undefined') == -1) {
+				
+				if(test == 1) alert('GetSize > Taille > Cookie manuel : '+size_id_games+' - size_id_games.indexOf > undefined : '+size_id_games.indexOf('undefined'));
+				
+				//document.getElementById('size').innerHTML='<span style="save_load"><strong><a href="/" title="Save">'+le_prenom+' !</a></strong><br></span>'; 
+				a=size_id_games.split('|');
+				var id_games = a[0];
+				var width = a[1];
+				var height = a[2];
+		
+				if(test == 1) alert('GetSize > cookies size_id_games - id_games : '+id_games+' - width : '+width+' - height : '+height+' - size_id_games : '+size_id_games);
+		
+				var navigateur = navigator.userAgent.toLowerCase();
+		
+				if (/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)){
+					//   alert("ff "+width+" - "+height)
+					document.getElementById('flash').style.width = width+'px'; void(0); 
+					document.getElementById('flash').style.height = height+'px'; void(0); 
+				}
+		
+				else if(/MSIE[\/\s](\d+\.\d+)/.test(navigator.userAgent)) { 
+					document.getElementById('anim').width = width; void(0); 
+					document.getElementById('anim').height = height; void(0); 
+				}
+		
+				else {
+					document.getElementById('flash').style.width = width+'px'; void(0); 
+					document.getElementById('flash').style.height = height+'px'; void(0); 
+					//alert('Mise a jour de la taille OK.');
+				}
+						
+				// Centrage du jeu
+				GameCentrage(width);
+	
+			}
+		
+			// A FAIRE : Si pas de cookies, on prend les valeur par défaut ajustée à 968 de la taille du jeu
+			else {
+	
+				if(test == 1) alert('GetSize > Taille > Par défaut (968x561) : '+game_size_width_dev+' - '+game_size_height_dev);
+				
+				// EN COURS A FAIRE : faire une fonction de resize default
+				function OptimaleGameDefaultSize (game_size_width_dev,game_size_height_dev) { // Game > optimal size
+					
+					var game_width = game_size_width_dev;
+					var game_height = game_size_height_dev;
+					
+					// On ajuste la taille optimale à une largeur de 968px et d'une hauteur à définir 
+					var game_height = (game_height/game_width)*968;
+					var game_height = Math.floor(game_height);
+					var game_width = 968;
+	
+					if(isNaN(game_size_width_dev) == true || isNaN(game_size_height_dev) == true) {
+						var default_size = '968|561';
+						if(test == 1) alert('GetSize > Taille > Function OptimaleGameDefaultSize() > game_size_width_dev:'+isNaN(game_size_width_dev)+' ou game_size_width_dev:'+isNaN(game_size_height_dev)+' n\'est pas un nombre : '+default_size+'. On prend la taille par défaut dure : '+default_size);
+					}
+	
+					else {
+						if(test == 1) alert('GetSize > Taille > Function OptimaleGameDefaultSize() > Default_size est un nombre : '+default_size);
+						var default_size = game_width+'|'+game_height;
+					}
+					
+					if(test == 1) alert('GetSize > Taille > Function OptimaleGameDefaultSize() > Default_size : '+default_size);
+					
+					return default_size;
+	
+				}
+				
+				var default_size = OptimaleGameDefaultSize(game_size_width_dev,game_size_height_dev);
+				var default_size = default_size.split('|');
+				var default_width = default_size[0];
+				var default_height = default_size[1];
+	
+				if(test == 1) alert('GetSize > Taille > Par défaut réajusté (968x???) : default_width : '+default_width+' - default_height : '+default_height);
+			
+				// alert("Cookies OFF : "+id_games+" - "+width+" - "+height);
+				/*
+				if (/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)){
+					// alert("ff "+width+" - "+height)
+					document.getElementById('flash').style.width = '968px'; void(0); 
+					document.getElementById('flash').style.height = '561px'; void(0); 
+				}
+			
+				else if(/MSIE[\/\s](\d+\.\d+)/.test(navigator.userAgent)) { 
+					document.getElementById('anim').width = 968; void(0); 
+					document.getElementById('anim').height = 561; void(0); 
+				}
+			   
+				else {
+					document.getElementById('flash').style.width = '968px'; void(0); 
+					document.getElementById('flash').style.height = '561px'; void(0); 
+					//alert('Mise a jour de la taille OK. cookie.');
+				}
+				*/
+				
+				// A FAIRE : si width ou height don't exists > défault 968x561
+				// A FAIRE : mettre la fonction "OptimaleGameDefaultSize" en indépendante.
+				
+				if (/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)){ // A FAIRE : utiliser la fonction
+					// alert("ff "+width+" - "+height)
+					document.getElementById('flash').style.width = default_width+'px'; void(0); 
+					document.getElementById('flash').style.height = default_height+'px'; void(0); 
+				}
+			
+				else if(/MSIE[\/\s](\d+\.\d+)/.test(navigator.userAgent)) { 
+					document.getElementById('anim').width = default_width; void(0); 
+					document.getElementById('anim').height = default_height; void(0); 
+				}
+			   
+				else {
+					document.getElementById('flash').style.width = default_width+'px'; void(0); 
+					document.getElementById('flash').style.height = default_height+'px'; void(0); 
+					//alert('Mise a jour de la taille OK. cookie.');
+				}
+				
+				// Centrage du jeu
+				GameCentrage(default_width);
+	
+			}
+			
+		}
+	}
+}
+
+
+
+function ResizeOrigine(anim,id_games,width,height) { // A FAIRE : width dev et height dev > 968 x height ajustée
+     
+	if(test == 1) alert('ResizeOrigine > variables - anim:'+anim+' - id_games : '+id_games+' - width : '+width+' + height : '+height);
+
+	// On ajuste la taille optimale à une largeur de 968px et d'une hauteur à définir 
+	var height = (height/width)*968;
+	var height = Math.floor(height);
+	var width = 968; /*808*/
+
+	if(test == 1) alert('ResizeOrigine > variables ajustées - width : '+width+' + height : '+height);
+
+	var navigateur = navigator.userAgent.toLowerCase();
+	
+	if (/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)){ // Firefox
+		document.getElementById('flash').style.width = width+'px'; void(0); 
+		document.getElementById('flash').style.height = height+'px'; void(0); 
+	}
+	
+	else if(/MSIE[\/\s](\d+\.\d+)/.test(navigator.userAgent)) { // Internet Explorer
+		document.getElementById('anim').width = width; void(0); 
+		document.getElementById('anim').height = height; void(0); 
+	}
+	
+	else { // Chrome, etc.
+		document.getElementById('flash').style.width = width+'px'; void(0); 
+		document.getElementById('flash').style.height = height+'px'; void(0); 
+	}
+  
+   	// Add cookies > taille manuelle
+	var concatenation = id_games+"|"+width+"|"+height;
+	/*setCook("size",concatenation,365);*/
+	var pathname=location.pathname;
+	var myDomain=pathname.substring(0,pathname.lastIndexOf('/')) +'/';
+	var date_exp = new Date();
+	date_exp.setTime(date_exp.getTime()+(3650*24*3600*1000));
+	// Ici on définit une durée de vie de 365 jours
+	SetCookie(id_games,concatenation,date_exp,myDomain);
+
+	if(test == 1) alert('ResizeOrigine > Cookie size - id_games:'+id_games+' - concatenation : '+concatenation+' - date_exp : '+date_exp+' + myDomain : '+myDomain);
+
+   	// Add cookies > taille auto : "Off"
+	var concatenation_autosize_on_off = id_games+'|0';
+	SetCookie('auto_size_'+id_games,concatenation_autosize_on_off,date_exp,myDomain);	
+
+	if(test == 1) alert('ResizeOrigine > Cookie auto_size - auto_size_id_games: auto_size_'+id_games+' - concatenation_autosize_on_off : '+concatenation_autosize_on_off+' - date_exp : '+date_exp+' + myDomain : '+myDomain);
+	
+	// Auto_size = "off"
+	document.getElementById("survol_zauto_id").className="survol_zauto";
+
+	// Centrage du jeu
+	GameCentrage(width);
+
+}
+
+
+// A FAIRE 0 : opera / safari et autres ainsi que pour le zoom et autres fonctionnalités.
+function Fullsize(anim,id_games,game_size_width_dev,game_size_height_dev) {
+		
+	if(test == 1) alert('Fullsize > anim : '+anim+' - id_games : '+id_games+' - game_size_width_dev : '+game_size_width_dev+' - game_size_height_dev : '+game_size_height_dev);
+	
+	// Taille optimale selon le développeur
+	if(!isNaN(game_size_width_dev) == true || !isNaN(game_size_height_dev) == true) {
+		if(test == 1) alert('Fullsize > Entier : TRUE - game_size_width_dev : '+game_size_width_dev+' - game_size_height_dev ajusté : '+game_size_height_dev);
+		var game_width = game_size_width_dev;
+		var game_height = game_size_height_dev;
+		// On ajuste la taille optimale à une largeur de 968px et d'une hauteur à définir 
+		var game_height = (game_height/game_width)*968;
+		var game_height = Math.floor(game_height);
+		var game_width = 968;
+	}
+	else {
+		if(test == 1) alert('Fullsize > Entier : FALSE > Taille par défaut manuelle (968x561)');
+		var game_width = parseInt(968,10);
+		var game_height = parseInt(561,10);
+	} 
+
+	if(test == 1) alert('Fullsize > gamewidth ajusté : '+game_width+' - gameheight ajusté : '+game_height);
+
+	var navigateur = navigator.userAgent.toLowerCase();
+	
+	var browser = browserCheckin();
+   	
+	if(browser == "Firefox" || browser == "Chrome" || browser == "Opera" || browser == "Safari" || browser == "InternetExplorer") {
+	
+		var window_width = window.innerWidth;
+			
+			if(window.innerWidth <= 735) var window_width_available = window_width-40;
+			else var window_width_available = window_width-555;
+			
+			//alert('window_width_available:'+window_width_available)
+		
+		var window_height = window.innerHeight;
+		var window_height_available = window_height-200;
+		//var screen_ratio = window_width_available/window_height_available;
+		
+		var ratio_dev = game_size_width_dev / game_size_height_dev;
+		var ratio_screen = window_width_available / window_height_available;
+		
+		if(test == 1) alert('Fullsize > window_width_available : '+window_width_available+' - window_height_available : '+window_height_available+' - ratio_dev : '+ratio_dev+' - ratio_screen : '+ratio_screen); 
+			
+		if(window_width_available >= window_height_available  && ratio_dev <= ratio_screen) { //&& screen_ratio > 1.40
+			if(test == 1) alert('Fullsize > Base : hauteur : (window_width_available:'+window_width_available+' >= window_height_available:'+window_height_available);
+			//var game_height_new = window_height-200; //300
+			var game_height_new = window_height_available; //300
+			var game_width_new = (game_width/game_height)*game_height_new;
+			var game_width_new = Math.floor(game_width_new);
+		}
+		else {
+			if(test == 1) alert('Fullsize > Base : largeur (window_width_available : '+window_width_available+' < window_height_available : '+window_height_available+')'); // ou screen_ratio : '+screen_ratio+' < 1.40 
+			
+				if(window.innerWidth <= 735) var game_width_new = window_width-40;
+				else var game_width_new = window_width-555;
+			
+			var game_height_new = (game_height/game_width)*game_width_new;
+			var game_height_new = Math.floor(game_height_new);
+		}
+	
+		//if(test == 1) alert('Fullsize > Base : hauteur : (game_width_new:'+game_width_new+' >= game_height_new:'+game_height_new);
+	
+		document.getElementById('flash').style.width = game_width_new+'px'; void(0); 
+		document.getElementById('flash').style.height = game_height_new+'px'; void(0); 
+		document.getElementById('flash').style.textAlign = 'left'; 
+	
+		// Centrage du jeu
+		GameCentrage(game_width_new);
+		
+		// Onload
+		document.getElementById("survol_zauto_id").className="survol_zauto_on";
+	}
+	
+	//else if() OPERA A FAIRE 0
+	//else if() SAFARI A FAIRE 0
+	
+	else { // "undefined" on utilise le Fullsize de Chrome
+
+		var window_width = window.innerWidth;
+		
+		if(window.innerWidth <= 735) var window_width_available = window_width-30;
+		else var window_width_available = window_width-545;
+		
+		var window_height = window.innerHeight;
+		var window_height_available = window_height-200;
+		//var screen_ratio = window_width_available/window_height_available;
+		
+		var ratio_dev = game_size_width_dev / game_size_height_dev;
+		var ratio_screen = window_width_available / window_height_available;
+		
+		if(test == 1) alert('Fullsize > window_width_available : '+window_width_available+' - window_height_available : '+window_height_available+' - ratio_dev : '+ratio_dev+' - ratio_screen : '+ratio_screen); 
+			
+		if(window_width_available >= window_height_available  && ratio_dev <= ratio_screen) { //&& screen_ratio > 1.40
+			if(test == 1) alert('Fullsize > Base : hauteur : (window_width_available:'+window_width_available+' >= window_height_available:'+window_height_available);
+			//var game_height_new = window_height-200; //300
+			var game_height_new = window_height_available; //300
+			var game_width_new = (game_width/game_height)*game_height_new;
+			var game_width_new = Math.floor(game_width_new);
+		}
+		else {
+			if(test == 1) alert('Fullsize > Base : largeur (window_width_available : '+window_width_available+' < window_height_available : '+window_height_available+')'); // ou screen_ratio : '+screen_ratio+' < 1.40 
+			
+			if(window.innerWidth <= 735) var game_width_new = window_width-30;
+			else var game_width_new = window_width-545;
+			
+			var game_height_new = (game_height/game_width)*game_width_new;
+			var game_height_new = Math.floor(game_height_new);
+		}
+	
+		//if(test == 1) alert('Fullsize > Base : hauteur : (game_width_new:'+game_width_new+' >= game_height_new:'+game_height_new);
+	
+		document.getElementById('flash').style.width = game_width_new+'px'; void(0); 
+		document.getElementById('flash').style.height = game_height_new+'px'; void(0); 
+		document.getElementById('flash').style.textAlign = 'left'; 
+	
+		// Centrage du jeu
+		GameCentrage(game_width_new);
+		
+		// Onload
+		document.getElementById("survol_zauto_id").className="survol_zauto_on";
+  }
+
+	// Add cookies
+	var concatenation = id_games+"|"+game_width_new+"|"+game_height_new;
+	var pathname=location.pathname;
+	var myDomain=pathname.substring(0,pathname.lastIndexOf('/')) +'/';
+	var date_exp = new Date();
+	date_exp.setTime(date_exp.getTime()+(3650*24*3600*1000));
+	// Ici on définit une durée de vie de 365 jours
+	SetCookie(id_games,concatenation,date_exp,myDomain);
+
+}
+
+
+
+function GameCentrage(game_width) {
+	var window_width = window.innerWidth;
+	var game_margin_left = (window_width/2)-507-(0.5*game_width);
+	var game_margin_left = Math.floor(game_margin_left);
+	if(game_margin_left<0) var game_margin_left = 0;
+	document.getElementById('id_contener_general_jeux').style.marginLeft = game_margin_left+'px'; 
+	if(test == 1) alert('GameCentrage (game_width:'+game_width+') OK > game_margin_left : '+game_margin_left+'.px');
+}
+
+
+
+function Autosize(anim,id_games,game_size_width_dev,game_size_height_dev) { // Auto_size : switch "On" <> "Off"
+	// A FAIRE : changer title : Auto size "activé" si actif OmO
+	// A FAIRE : bug FF - trop grand
+	// Cookies Autosize = 1 ou 0 ?
+	auto_size_id_games = GetCookie('auto_size_'+id_games);
+	if(test == 1) alert('Autosize > cookie auto_size - auto_size_id_games : '+auto_size_id_games);
+
+	if (auto_size_id_games) {
+    	//document.getElementById('size').innerHTML='<span style="save_load"><strong><a href="/" title="Save">'+le_prenom+' !</a></strong><br></span>'; 
+		b=auto_size_id_games.split('|');
+		var id_games = b[0];
+		var auto_size = b[1];
+		
+		if(test == 1) alert('Autosize > cookie extracted - id_games : '+id_games+' - auto_size : '+auto_size);
+		
+		if(auto_size == 1) {
+			if(test == 1) alert('Autosize > auto_size is "On" and go "Off" > Game size don\'t change');
+			// Update cookies
+			var concatenation_autosize_on_off = id_games+"|0";
+			var pathname=location.pathname;
+			var myDomain=pathname.substring(0,pathname.lastIndexOf('/')) +'/';
+			var date_exp = new Date();
+			date_exp.setTime(date_exp.getTime()+(3650*24*3600*1000));
+			SetCookie('auto_size_'+id_games,concatenation_autosize_on_off,date_exp,myDomain);	
+			// Auto_size = "off"
+			document.getElementById("survol_zauto_id").className="survol_zauto";
+		}
+		else {
+			if(test == 1) alert('Autosize > auto_size is "Off" and go "On" > Fullsize - anim - id_games : '+id_games+' - game_size_width_dev : '+game_size_width_dev+' - game_size_height_dev : '+game_size_height_dev);
+			
+			// Add cookies
+			var concatenation_autosize_on_off = id_games+"|1";
+			var pathname=location.pathname;
+			var myDomain=pathname.substring(0,pathname.lastIndexOf('/')) +'/';
+			var date_exp = new Date();
+			date_exp.setTime(date_exp.getTime()+(3650*24*3600*1000));
+			SetCookie('auto_size_'+id_games,concatenation_autosize_on_off,date_exp,myDomain);	
+			
+			if(test == 1) alert('Autosize > Fullsize call ...');
+			Fullsize('anim',id_games,game_size_width_dev,game_size_height_dev);	
+		
+			// Bouton auto_size is "on"
+			if(test == 1) alert('Autosize > Background style is now change to "on".');
+		
+			document.getElementById("survol_zauto_id").className="survol_zauto_on";
+		}
+		
+	}
+	else { // Cookie don't exists : auto_size > "On"		
+
+		if(test == 1) alert('Autosize > cookie don\'t exists : Autosize auto_size is "Off" and go "On"');
+
+		// Add cookies
+		var concatenation_autosize_on_off = id_games+"|1";
+		var pathname=location.pathname;
+		var myDomain=pathname.substring(0,pathname.lastIndexOf('/')) +'/';
+		var date_exp = new Date();
+		date_exp.setTime(date_exp.getTime()+(3650*24*3600*1000));
+		SetCookie('auto_size_'+id_games,concatenation_autosize_on_off,date_exp,myDomain);	
+		
+		Fullsize('anim',id_games,game_size_width_dev,game_size_height_dev);	
+		
+	}
+
+}
+
+
+
+// Jeux-site.php > Formats
+// ==========================================================================================================================================
+
+function MyFormatAjax(Id, Format, Ext, To14) {
+  var OAjax;
+  if (window.XMLHttpRequest) OAjax = new XMLHttpRequest();
+  else if (window.ActiveXObject) OAjax = new ActiveXObject('Microsoft.XMLHTTP');
+  OAjax.open('POST',"jeux-site-RequPHP.php",true); // A FAIRE : chemin ok ou ../../include... ?
+  OAjax.onreadystatechange = function()
+  {
+      if (OAjax.readyState == 4 && OAjax.status==200)
+      {
+          if (document.getElementById)
+          {   
+              if (OAjax.responseText =='true') { /* OK */
+                    document.getElementById('msg').innerHTML=''+OAjax.responseText+'';
+              }
+			  else{                             /* PAS OK */
+                    document.getElementById('msg').innerHTML=''+OAjax.responseText+'';
+              }
+          }     
+      }
+  }
+  OAjax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=ISO-8859-1");
+  OAjax.send('Id='+Id+'&Format='+Format+'&Ext='+Ext+'&To14='+To14);  
+} 
+
+
+
+
+// Jeux > Envoyer ami
+// ==========================================================================================================================================
+
+url = document.location.href;
+xend = url.lastIndexOf("/") + 1;
+var base_url = url.substring(0, xend);
+var ajax_get_error = false;
+
+function ajax_do(url) {
+   // Does URL begin with http?
+   if (url.substring(0, 4) != 'http') {
+      url = base_url + url;
+   }
+   // Create new JS element
+   var jsel = document.createElement('SCRIPT');
+   jsel.type = 'text/javascript';
+   jsel.src = url;
+   // Append JS element (therefore executing the 'AJAX' call)
+   document.body.appendChild (jsel);
+   return true;
+}
+
+
+
+function ajax_get(url, el) {
+   // Has element been passed as object or id-string?
+   if (typeof(el) == 'string') {
+      el = document.getElementById(el);
+   }
+   // Valid el?
+   if (el == null) { return false; }
+   // Does URL begin with http?
+   if (url.substring(0, 4) != 'http') {
+      url = base_url + url;
+   }
+   // Create getfile URL
+   getfile_url = base_url + '../include/p_all/getfile.php?url=' + escape(url) + '&el=' + escape(el.id);
+   // Do Ajax
+   ajax_do (getfile_url);
+   return true;
+}
+
+
+
+function validEmail(emailami) { // VERIFICATION DE LA SYNTHAXE DE L'EMAIL // FAIRE UNE SULE FONCTION <-> validEmail()
+   invalidChars = "/:,;~"
+   // verifie qu'il n'y a pas de caracteres pas autorises
+   for (i=0; i<invalidChars.length; i++) {
+   badChar = invalidChars.charAt(i)
+   if (emailami.indexOf(badChar,0) > -1) {
+   return false
+   }
+   }
+   // verifie qu'il y a un @
+   atPos = emailami.indexOf("@",1)
+   if (atPos == -1) {
+   return false
+   }
+   // et seulement un @
+   if (emailami.indexOf("@", atPos+1) != -1) {
+   return false
+   }
+   // et au moins un point apres le @
+   periodPos = emailami.indexOf(".",atPos)
+   if (periodPos == -1) {
+   return false
+   }
+   //verifie qu'il y a au moins un caractère entre le @ et le .
+   if (periodPos - atPos < 2) {
+   return false
+   }
+   //verifie qu'il y a au moins deux caracteres apres le point
+   if (periodPos+3 > emailami.length) {
+   return false
+   }
+   return true
+}
+
+
+
+function valeurCheck() {
+	
+	if(test == 4) alert('JS > valeurCheck()');
+   
+	var bloque = 0;
+	
+	var reco_name = document.getElementById('reco_name').value;
+	var reco_email = document.getElementById('reco_email').value;
+	var reco_email_ami = document.getElementById('reco_email_ami').value;
+	var reco_comment = document.getElementById('reco_comment').value;
+	var jeu_id = document.getElementById('jeu_id').value;
+	var jeu_nom = document.getElementById('jeu_nom').value;
+	var jeu_cat = document.getElementById('jeu_cat').value;
+	var jeu_ref_cat = document.getElementById('jeu_ref_cat').value;
+	var jeu_image = document.getElementById('jeu_image').value;
+	var jeu_ip = document.getElementById('jeu_ip').value;
+	var jeu_total = document.getElementById('jeu_total').value;
+	var jeu_to14 = document.getElementById('jeu_to14').value;
+
+		
+   // test
+   if(test == 4) alert(reco_name+' - '+reco_email+' - '+reco_email_ami+' - '+reco_comment+' - '+jeu_id+' - '+jeu_nom+' - '+jeu_cat+' - '+jeu_ref_cat+' - '+jeu_image+' - '+jeu_ip+' - '+jeu_total+' - '+jeu_to14+' - ');
+
+   /* 
+   // CHECK MESSAGE -- on commence par en bas pour que le onfocus replace la page au bon niveau d'erreur
+   if(comment == "" ){ // si champ comment vide
+      document.getElementById('comment').focus(); // focus dans le champ
+      document.getElementById('comment').style.border = '1px solid #D41919'; // on change la couleur du border du INPUT
+      document.getElementById('commentbox').innerHTML = '<font style="color:#cc0000; font-size:10px;"><img src="reco\/images\/no.gif" alt="" \/> Veuillez entrer votre message.<\/font>'; // on affichage le message dans le div ID
+   }else{ // si champ comment rempli
+      document.getElementById('comment').style.border = '1px solid #CFD8E0'; // on remet la couleur du border du INPUT
+      document.getElementById('commentbox').innerHTML = '&nbsp;<img src="reco\/images\/yes.gif" alt="" \/>'; // on affiche une image OK
+   }
+   */
+   
+   
+	// CHECK COMMENTAIRE
+	document.getElementById("reco_comment").className = "envoyer_ami_contenu yes_grey";
+	if(reco_comment == ""){
+		document.getElementById("reco_comment").className = "envoyer_ami_contenu yes_grey";
+	}
+	else{
+		document.getElementById('reco_comment').style.border = '1px solid #CFD8E0';
+		document.getElementById("reco_comment").className = "envoyer_ami_contenu yes";
+	}
+
+
+	// CHECK EMAIL AMI
+	if(reco_email_ami == "" ){
+		document.getElementById('reco_email_ami').focus();
+		document.getElementById('reco_email_ami').style.border = '1px solid #D41919';
+		document.getElementById("reco_email_ami").className = "envoyer_ami_contenu nearly_yes";
+		document.getElementById('reco_email_ami_msg').innerHTML = '<font style="color:#cc0000; font-size:10px; padding-left:5px;">Veuillez entrer l\'email de votre ami.<\/font>';
+		var bloque = 1;
+	}
+	else if (!validEmail(reco_email_ami)) {
+		document.getElementById('reco_email_ami').focus();
+		document.getElementById('reco_email_ami').select();
+		document.getElementById('reco_email_ami').style.border = '1px solid #D41919';
+		document.getElementById("reco_email_ami").className = "envoyer_ami_contenu nearly_yes";
+		document.getElementById('reco_email_ami_msg').innerHTML = '<font style="color:#cc0000; font-size:10px; padding-left:5px;">L\'email de votre ami n\'est pas valide<\/font>';
+		var bloque = 1;
+	}
+	else{
+		document.getElementById('reco_email_ami').style.border = '1px solid #CFD8E0';
+		document.getElementById("reco_email_ami").className = "envoyer_ami_contenu yes";
+		document.getElementById('reco_email_ami_msg').innerHTML = '';
+	}
+	
+	
+	// CHECK EMAIL 
+	if(reco_email == "" ){
+		document.getElementById('reco_email').focus();
+		document.getElementById('reco_email').style.border = '1px solid #D41919';
+		document.getElementById("reco_email").className = "envoyer_ami_contenu nearly_yes";
+		document.getElementById('reco_email_msg').innerHTML = '<font style="color:#cc0000; font-size:10px; padding-left:5px;">Veuillez entrer votre email.<\/font>';
+		var bloque = 1;
+	}
+	else if (!validEmail(reco_email)) {
+		document.getElementById('reco_email').focus();
+		document.getElementById('reco_email').select();
+		document.getElementById('reco_email').style.border = '1px solid #D41919';
+		document.getElementById("reco_email").className = "envoyer_ami_contenu nearly_yes";
+		document.getElementById('reco_email_msg').innerHTML = '<font style="color:#cc0000; font-size:10px; padding-left:5px;">Votre email n\'est pas valide<\/font>';
+		var bloque = 1;
+	}
+	else{
+		document.getElementById('reco_email').style.border = '1px solid #CFD8E0';
+		document.getElementById("reco_email").className = "envoyer_ami_contenu yes";
+		document.getElementById('reco_email_msg').innerHTML = '';
+	}
+	
+	// CHECK NOM
+	if(reco_name == "" ){
+		document.getElementById('reco_name').focus();
+		document.getElementById('reco_name').style.border = '1px solid #D41919';
+		document.getElementById("reco_name").className = "envoyer_ami_contenu nearly_yes";
+		document.getElementById('reco_name_msg').innerHTML = '<font style="color:#cc0000; font-size:10px; padding-left:5px;">Veuillez entrer votre nom.<\/font>';
+		var bloque = 1;
+	}
+	else{
+		document.getElementById('reco_name').style.border = '1px solid #CFD8E0';
+		document.getElementById("reco_name").className = "envoyer_ami_contenu yes";
+		document.getElementById('reco_name_msg').innerHTML = '';
+	}
+	
+	// CHECK TITRE JEU
+	/*
+	if(reco_name == "" ){
+		document.getElementById('contact_jeu_titre').focus();
+		document.getElementById('contact_jeu_titre').style.border = '1px solid #D41919';
+		document.getElementById("contact_jeu_titre").className = "envoyer_ami_contenu nearly_yes";
+		document.getElementById('contact_jeu_titre_msg').innerHTML = '<font style="color:#cc0000; font-size:10px; padding-left:5px;">Veuillez le titre du jeu.<\/font>';
+	}
+	else{
+		document.getElementById('contact_jeu_titre').style.border = '1px solid #CFD8E0';
+		document.getElementById("contact_jeu_titre").className = "envoyer_ami_contenu yes";
+		document.getElementById('contact_jeu_titre_msg').innerHTML = '';
+	}
+	*/
+	
+
+	if(test == 4) alert('valeurCheck() > reco_name:'+reco_name+' - reco_email:'+reco_email+' - reco_email_ami:'+reco_email_ami+' - reco_comment:'+reco_comment+' - jeu_id:'+jeu_id+' - jeu_nom:'+jeu_nom+' - jeu_cat:'+jeu_cat+' - jeu_ref_cat:'+jeu_ref_cat+' - jeu_image:'+jeu_image+' - jeu_ip:'+jeu_ip+' - jeu_total:'+jeu_total+' - jeu_to14:'+jeu_to14);
+  
+	if(bloque == 0) {
+		document.getElementById("reco_email_ami").value="";
+		//document.getElementById('result_msg').innerHTML = '&nbsp;<img src="images\/yes.gif" alt="" \/> Message envoyé !';
+		document.getElementById("button_send_reco").value = "Message envoyé !";
+		document.getElementById("button_send_reco").className = "buttonjc_2_ok";
+		//document.getElementById("button_send_reco").disabled = true;
+		
+		if(test == 4) alert('AjaxMailRecoSend : avant - bloque:'+0);
+		if(bloque == 0) AjaxMailRecoSend(reco_name, reco_email, reco_email_ami, reco_comment, jeu_id, jeu_nom, jeu_cat, jeu_ref_cat, jeu_image, jeu_ip, jeu_total, jeu_to14);
+
+	}
+	
+	document.getElementById('reco_comment').onfocus=function(){
+		document.getElementById("button_send_reco").className = "buttonjc_2";
+		document.getElementById("button_send_reco").value = "Envoyer le jeu";
+	};
+	document.getElementById('reco_email_ami').onfocus=function(){
+		document.getElementById("button_send_reco").className = "buttonjc_2";
+		document.getElementById("button_send_reco").value = "Envoyer le jeu";
+	};
+	document.getElementById('reco_email').onfocus=function(){
+		document.getElementById("button_send_reco").className = "buttonjc_2";
+		document.getElementById("button_send_reco").value = "Envoyer le jeu";
+	};
+	document.getElementById('reco_name').onfocus=function(){
+		document.getElementById("button_send_reco").className = "buttonjc_2";
+		document.getElementById("button_send_reco").value = "Envoyer le jeu";
+	};
+	
+}
+
+
+
+// Envoie du mail en Ajax
+function AjaxMailRecoSend(reco_name, reco_email, reco_email_ami, reco_comment, jeu_id, jeu_nom, jeu_cat, jeu_ref_cat, jeu_image, jeu_ip, jeu_total, jeu_to14) {
+	
+	if(test == 4) alert('function AjaxMailRecoSend()');
+	
+	var OAjax;
+	
+	if (window.XMLHttpRequest) OAjax = new XMLHttpRequest();
+	else if (window.ActiveXObject) OAjax = new ActiveXObject('Microsoft.XMLHTTP');
+	OAjax.open('POST',"include/p_jeux/mail-reco-send.php",true);
+
+	if(grecaptcha.getResponse() == '') {
+		document.getElementById("button_send_reco").className = "buttonjc_2";
+		document.getElementById("button_send_reco").value = "Envoyer le jeu";
+	}
+		
+	OAjax.onreadystatechange = function()
+	{
+
+		if (OAjax.readyState == 4 && OAjax.status==200)
+		  {
+			  if (document.getElementById)
+			  {   
+			  
+				  if(test == 4) alert('OAjax.responseText: '+OAjax.responseText);
+
+				  if (OAjax.responseText =='true') { /* OK */
+						/*document.getElementById('msg').innerHTML='<font color=GREEN>'+OAjax.responseText+'</font>';*/
+						document.getElementById('msg_reco_envoie').innerHTML='<font color=GREEN>'+OAjax.responseText+'</font>';
+				  }
+				  else{                             /* PAS OK */
+						/*document.getElementById('msg').innerHTML='<font color=RED>'+OAjax.responseText+'</font>';*/
+						document.getElementById('msg_reco_envoie').innerHTML='<font color=RED>'+OAjax.responseText+'</font>';
+				  }
+				  
+			  }     
+		  }
+	}
+	OAjax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=ISO-8859-1");
+		
+	OAjax.send('reco_name='+reco_name+'&reco_email='+reco_email+'&reco_email_ami='+reco_email_ami+'&reco_comment='+reco_comment+'&jeu_id='+jeu_id+'&jeu_nom='+jeu_nom+'&jeu_cat='+jeu_cat+'&jeu_ref_cat='+jeu_ref_cat+'&jeu_image='+jeu_image+'&jeu_ip='+jeu_ip+'&jeu_total='+jeu_total+'&jeu_to14='+jeu_to14+'&g-recaptcha-response='+grecaptcha.getResponse()); 
+	
+	if(test == 4) alert('reco_name='+reco_name+'&reco_email='+reco_email+'&reco_email_ami='+reco_email_ami+'&reco_comment='+reco_comment+'&jeu_id='+jeu_id+'&jeu_nom='+jeu_nom+'&jeu_cat='+jeu_cat+'&jeu_ref_cat='+jeu_ref_cat+'&jeu_image='+jeu_image+'&jeu_ip='+jeu_ip+'&jeu_total='+jeu_total+'&jeu_to14='+jeu_to14+'&g-recaptcha-response='+grecaptcha.getResponse());
+	if(test == 4) alert('OK!');
+
+} 
+
+
+
+// Contact
+function valeurCheck_contact() {
+	
+	if(test == 1) alert('function valeurCheck_contact()');
+	
+	var contact_name = document.getElementById('contact_name').value;
+	
+	var contact_email = document.getElementById('contact_email').value;
+	var contact_sujet = document.querySelector('input[name="contact_sujet"]:checked').value; // A FAIRE : Marche sur tous les navigateurs ?
+	
+	var contact_message = document.getElementById('contact_message').value;
+
+	var contact_jeu_id = document.getElementById('contact_jeu_id').value;
+	
+	var contact_ip = document.getElementById('contact_ip').value;
+	var contact_navigateur = navigator.userAgent.toLowerCase();
+
+	var contact_jeu_titre = document.getElementById('contact_jeu_titre').value;
+	var contact_jeu_description = document.getElementById('contact_jeu_description').value;
+	var contact_jeu_swf = document.getElementById('contact_jeu_swf').value;
+	var contact_jeu_image = document.getElementById('contact_jeu_image').value;
+
+
+	/* Sujet : proposer un jeu */
+	if(test == 1) alert('valeurCheck_contact() > contact_name:'+contact_name+' - contact_email:'+contact_email+' - contact_sujet:'+contact_sujet+' - contact_message:'+contact_message+' - contact_jeu_id:'+contact_jeu_id+' - contact_ip:'+contact_ip+' - contact_navigateur:'+contact_navigateur+' - contact_jeu_titre:'+contact_jeu_titre+' - contact_jeu_description:'+contact_jeu_description+' - contact_jeu_swf:'+contact_jeu_swf+' - contact_jeu_image:'+contact_jeu_image); 
+ 	
+  
+	var bloque = 0;
+	
+	// A FAIRE 0 : Secu des saisies
+
+	// CHECK > Email 
+	//alert('contact_email:'+contact_email);
+	if(contact_email == "" || contact_email == "Votre adresse email"){
+		document.getElementById('contact_email').focus();
+		document.getElementById('contact_email').style.border = '1px solid #D41919';
+		document.getElementById("contact_email").className = "form_contact_input nearly_yes_contact";
+		document.getElementById('contact_email_msg').innerHTML = '<span class="contact_error_message">Veuillez entrer votre email.</span>';
+		var bloque = 1;
+	}
+	else if (!validEmail(contact_email)) {
+		document.getElementById('contact_email').focus();
+		document.getElementById('contact_email').select();
+		document.getElementById('contact_email').style.border = '1px solid #D41919';
+		document.getElementById("contact_email").className = "form_contact_input nearly_yes_contact";
+		document.getElementById('contact_email_msg').innerHTML = '<span class="contact_error_message">Votre email n\'est pas valide.</span>';
+		var bloque = 1;
+	}
+	else{
+		document.getElementById('contact_email').style.border = '1px solid #CFD8E0';
+		document.getElementById("contact_email").className = "form_contact_input yes_contact";
+		document.getElementById('contact_email_msg').innerHTML = '';
+	}
+	
+	
+	
+	// CHECK > Nom
+	if(contact_name == "" || contact_name == "Votre nom"){
+		document.getElementById('contact_name').focus();
+		document.getElementById('contact_name').style.border = '1px solid #D41919';
+		document.getElementById("contact_name").className = "form_contact_input nearly_yes_contact";
+		document.getElementById('contact_name_msg').innerHTML = '<span class="contact_error_message">Veuillez entrer votre nom.</span>';
+		var bloque = 1;
+	}
+	else{
+		document.getElementById('contact_name').style.border = '1px solid #CFD8E0';
+		document.getElementById("contact_name").className = "form_contact_input yes_contact";
+		document.getElementById('contact_name_msg').innerHTML = '';
+	}
+	
+	// A FAIRE 1 : activer la saisie semi auto
+			
+
+
+
+	// PROPOSER UN JEU
+	// --------------------------------------------------------------------------------------------------------------------------------
+	if(contact_sujet == 2) {
+
+		// CHECK > Message A FAIRE ajouter hidden message dans proposer un jeu
+		if(contact_message != 0) {
+			if(contact_message == ""){
+				document.getElementById('contact_message').focus();
+				document.getElementById('contact_message').style.border = '1px solid #D41919';
+				document.getElementById("contact_message").className = "form_contact_input nearly_yes_contact";
+				document.getElementById('contact_message_msg').innerHTML = '<span class="contact_error_message">Veuillez saisir votre message.</span>';
+				var bloque = 1;
+			}
+			else{
+				document.getElementById('contact_message').style.border = '1px solid #CFD8E0';
+				document.getElementById("contact_message").className = "form_contact_input yes_contact";
+				document.getElementById('contact_message_msg').innerHTML = '';
+			}
+		}
+	
+	
+	
+		// CHECK > Proposer un jeu > Titre du jeu
+		if(test == 1) alert('contact_jeu_titre:'+contact_jeu_titre);
+		if(contact_jeu_titre == ""){
+			document.getElementById("contact_jeu_titre").className = "form_contact_input nearly_yes_contact";
+			document.getElementById("contact_jeu_titre").className = "form_contact_input nearly_yes_contact";
+			document.getElementById("contact_jeu_titre_msg").innerHTML = '<span class="contact_error_message">Veuillez saisir le titre de ce jeu.</span>';
+			var bloque = 1;
+		}
+		else{
+			document.getElementById("contact_jeu_titre").style.border = '1px solid #CFD8E0';
+			document.getElementById("contact_jeu_titre").className = "form_contact_input yes_contact";
+			document.getElementById("contact_jeu_titre").innerHTML = '';
+			document.getElementById("contact_jeu_titre_msg").innerHTML = '';
+		}
+		
+		// CHECK > Proposer un jeu > Description du jeu
+		/*
+		alert('contact_jeu_description:'+contact_jeu_description);
+		if(contact_jeu_description == "" || contact_jeu_description == "http://"){
+			document.getElementById("contact_jeu_description").className = "form_contact_input nearly_yes_contact";
+			document.getElementById("contact_jeu_description").className = "form_contact_input nearly_yes_contact";
+			document.getElementById("contact_jeu_description_msg").innerHTML = '<span class="contact_error_message">Veuillez saisir une description UNIQUE pour ce jeu.</span>';
+			var bloque = 1;
+		}
+		else{
+			document.getElementById("contact_jeu_description").style.border = '1px solid #CFD8E0';
+			document.getElementById("contact_jeu_description").className = "form_contact_input yes_contact";
+			document.getElementById("contact_jeu_description").innerHTML = '';
+			document.getElementById("contact_jeu_description_msg").innerHTML = '';
+		}
+		*/
+	
+		// CHECK > Proposer un jeu > Fichier du jeu
+		if(contact_jeu_swf != 0) {
+			if(contact_jeu_swf == "" || contact_jeu_swf == "http://"){	// A FAIRE 5 : vérifier que l'URL est correcte
+			document.getElementById("contact_jeu_swf").className = "form_contact_input nearly_yes_contact";
+			document.getElementById("contact_jeu_swf").className = "form_contact_input nearly_yes_contact";
+			document.getElementById('contact_jeu_swf_msg').innerHTML = '<span class="contact_error_message">Veuillez saisir l\'URL du fichier jeu.</span>';
+			var bloque = 1;
+		}
+		else{
+			document.getElementById('contact_jeu_swf').style.border = '1px solid #CFD8E0';
+			document.getElementById("contact_jeu_swf").className = "form_contact_input yes_contact";
+			document.getElementById('contact_jeu_swf').innerHTML = '';
+			document.getElementById('contact_jeu_swf_msg').innerHTML = '';
+			}
+		}
+		
+		// CHECK > Proposer un jeu > Image du jeu
+		if(contact_jeu_image != 0) {
+			if(contact_jeu_image == "" || contact_jeu_image == "http://"){// A FAIRE 5 : vérifier que l'URL est correcte
+			document.getElementById("contact_jeu_image").className = "form_contact_input nearly_yes_contact";
+			document.getElementById("contact_jeu_image").className = "form_contact_input nearly_yes_contact";
+			document.getElementById('contact_jeu_image_msg').innerHTML = '<span class="contact_error_message">Veuillez saisir l\'URL de votre image.</span>';
+			var bloque = 1;
+		}
+		else{
+			document.getElementById('contact_jeu_image').style.border = '1px solid #CFD8E0';
+			document.getElementById("contact_jeu_image").className = "form_contact_input yes_contact";
+			document.getElementById('contact_jeu_image_msg').innerHTML = '';
+			document.getElementById('contact_jeu_image_msg').innerHTML = '';
+			}
+		}
+		
+	}
+	// --------------------------------------------------------------------------------------------------------------------------------
+
+
+
+	
+	// CHECK > Message
+	if(contact_sujet != 2) {		
+		if(contact_message == ""){
+			document.getElementById("contact_message").className = "form_contact_input_message nearly_yes_contact";
+			document.getElementById("contact_message").className = "form_contact_input_message nearly_yes_contact";
+			document.getElementById('contact_message_msg').innerHTML = '<span class="contact_error_message">Veuillez entrer votre message.</span>';
+			var bloque = 1;
+		}
+		else{
+			document.getElementById('contact_message').style.border = '1px solid #CFD8E0';
+			document.getElementById("contact_message").className = "form_contact_input_message yes_contact";
+			document.getElementById('contact_message_msg').innerHTML = '';
+		}
+	}
+
+	if(test == 1) alert('Contenu bloqué ? (1 = oui) :'+bloque);
+		
+	if(bloque == 0) AjaxMailSend(contact_name, contact_email, contact_sujet, contact_message, contact_jeu_id, contact_ip, contact_navigateur, contact_jeu_titre, contact_jeu_description, contact_jeu_swf, contact_jeu_image);
+	//if(bloque == 0) AjaxMailSend(contact_name, contact_email, contact_sujet, contact_message, contact_jeu_id, contact_ip, contact_jeu_titre, contact_jeu_description, contact_jeu_swf, contact_jeu_image);
+
+	if(test == 1) {
+		if(bloque == 0) alert('Message envoyé !');
+		else alert('Message NON envoyé !');
+	}
+		
+	// MAJ du bouton
+	if(bloque == 0 && contact_jeu_titre != 0){
+		document.getElementById("button_send_contact").value = "Jeu envoyé !";
+		document.getElementById("button_send_contact").disabled = true;
+		document.getElementById("button_send_contact").className = "buttonjc_2_ok";
+	}
+	else if (bloque == 0 && contact_jeu_titre == 0){
+		document.getElementById("button_send_contact").value = "Message envoyé !";
+		document.getElementById("button_send_contact").disabled = true;
+		document.getElementById("button_send_contact").className = "buttonjc_2_ok";
+	}
+   
+}
+
+
+
+// Envoie du mail en Ajax
+//function AjaxMailSend(contact_name, contact_email, contact_sujet, contact_message, contact_jeu_id, contact_ip, contact_jeu_titre, contact_jeu_description, contact_jeu_swf, contact_jeu_image) {
+
+function AjaxMailSend(contact_name, contact_email, contact_sujet, contact_message, contact_jeu_id, contact_ip, contact_navigateur, contact_jeu_titre, contact_jeu_description, contact_jeu_swf, contact_jeu_image) {
+	
+	var OAjax;
+	
+	if (window.XMLHttpRequest) OAjax = new XMLHttpRequest();
+	else if (window.ActiveXObject) OAjax = new ActiveXObject('Microsoft.XMLHTTP');
+	OAjax.open('POST',"../../include/p_all/mail-send.php",true);
+	OAjax.onreadystatechange = function()
+	{
+		//alert('OAjax.responseText: '+OAjax.responseText);
+
+		if (OAjax.readyState == 4 && OAjax.status==200)
+		  {
+			  if (document.getElementById)
+			  {   
+				  if (OAjax.responseText =='true') { /* OK */
+					    if(test == 1) alert('OAjax.responseText = true');
+						/*document.getElementById('msg').innerHTML='<font color=GREEN>'+OAjax.responseText+'</font>';*/
+						document.getElementById('msg_envoie').innerHTML='<font color=GREEN>'+OAjax.responseText+'</font>';
+				  }
+				  else{                             /* PAS OK */
+					    if(test == 1) alert('OAjax.responseText = false');
+						/*document.getElementById('msg').innerHTML='<font color=RED>'+OAjax.responseText+'</font>';*/
+						document.getElementById('msg_envoie').innerHTML='<font color=RED>'+OAjax.responseText+'</font>';
+				  }
+				  
+			  }     
+		  }
+	}
+	
+	OAjax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=ISO-8859-1");
+	
+	//OAjax.send('contact_name='+contact_name+'&contact_email='+contact_email+'&contact_sujet='+contact_sujet+'&contact_message='+contact_message+'&contact_jeu_id='+contact_jeu_id+'&contact_ip='+contact_ip+'&contact_navigateur='+contact_navigateur+'&contact_jeu_titre='+contact_jeu_titre+'&contact_jeu_description='+contact_jeu_description+'&contact_jeu_swf='+contact_jeu_swf+'&contact_jeu_image='+contact_jeu_image); 
+//	if(test == 1) alert(contact_name='+contact_name+'&contact_email='+contact_email+'&contact_sujet='+contact_sujet+'&contact_message='+contact_message+'&contact_jeu_id='+contact_jeu_id+'&contact_ip='+contact_ip+'&contact_jeu_titre='+contact_jeu_titre+'&contact_jeu_description='+contact_jeu_description+'&contact_jeu_swf='+contact_jeu_swf+'&contact_jeu_image='+contact_jeu_image+'');
+	
+	OAjax.send('contact_name='+contact_name+'&contact_email='+contact_email+'&contact_sujet='+contact_sujet+'&contact_message='+contact_message+'&contact_jeu_id='+contact_jeu_id+'&contact_ip='+contact_ip+'&contact_jeu_titre='+contact_jeu_titre+'&contact_navigateur='+contact_navigateur+'&contact_jeu_description='+contact_jeu_description+'&contact_jeu_swf='+contact_jeu_swf+'&contact_jeu_image='+contact_jeu_image); 
+	
+} 
+
+
+
+function Controle(choix,complement) {
+	
+	if (complement!=1) complement=0;
+		
+	if(choix==1) { /* Proposer un jeu */
+		document.getElementById('msg').innerHTML='<br><label for="contact_jeu_titre"><span class="form_contact_proposerjeu_titre">Titre du jeu</span></label><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td></td><td><input class="form_contact_proposerjeu_input" name="contact_jeu_titre" id="contact_jeu_titre" type="text" size="50" maxlength="100" /> <span id="contact_jeu_titre_msg"></span></td></tr></table><br><p><label for="contact_jeu_description" style="font-weight:bold; display:block; margin-bottom:1em;"><span class="form_contact_proposerjeu_titre"><strong>Description du jeu</strong></span></label></p><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td></td><td><textarea class="form_contact_proposerjeu_input" name="contact_jeu_description" id="contact_jeu_description" cols="55" rows="6"></textarea> <span id="contact_jeu_description_msg"></span></td></tr></table><br><p><label for="contact_jeu_swf" style="font-weight:bold; display:block; margin-bottom:1em;"><span class="form_contact_proposerjeu_titre"><strong>Fichier du jeu</strong></span><br><span class="form_contact_proposerjeu_contenu">Lien vers le fichier de votre jeu</span></label></p><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td></td><td><input class="form_contact_proposerjeu_input" name="contact_jeu_swf" id="contact_jeu_swf" type="text" size="50" value="http://" maxlength="150" /> <span id="contact_jeu_swf_msg"></span> </td></tr></table><br><p><label for="contact_jeu_image" style="font-weight:bold; display:block; margin-bottom:1em;"><span class="form_contact_proposerjeu_titre"><strong>Image du jeu</strong></span><br><span class="form_contact_proposerjeu_contenu">Lien vers l\'image de votre jeu.<br>Format : .gif / .jpg / .png - dimension : > 160x120 px.</span></label></p><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td></td><td><input class="form_contact_proposerjeu_input" name="contact_jeu_image" id="contact_jeu_image" type="text" size="50" value="http://" maxlength="150" /> <span id="contact_jeu_image_msg"></span> </td></tr></table><br><span class="form_contact_proposerjeu_contenu">Vous pouvez aussi nous envoyer directement ces informations par mail : <strong>contact@jeuxclic.com</strong></span><br><br><input type="hidden" name="contact_message" id="contact_message" value="0" />';
+	}
+	else if(choix==2){ /* Partenariat */
+		document.getElementById('msg').innerHTML='<br><span class="form_contact_contenu">Veuillez nous indiquer l\'<strong>URL de votre site</strong> ainsi que le <strong>nombre de visites par jour</strong>.</span><br><br><p><label for="email" style="font-weight:bold; display:block; margin-bottom:1em;"><div class="form_contact_titre">Votre message</div></label></p><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td width="6%"></td><td width="94%"><textarea class="form_contact_input_message" name="contact_message" id="contact_message"></textarea> <span id="contact_message_msg"></span> </td></tr></table><br><input type="hidden" name="contact_id_jeu" id="contact_id_jeu" value="0" /><input type="hidden" name="contact_jeu_titre" id="contact_jeu_titre" value="0" /><input type="hidden" name="contact_jeu_description" id="contact_jeu_description" value="0" /><input type="hidden" name="contact_jeu_swf" id="contact_jeu_swf" value="0" /><input type="hidden" name="contact_jeu_image" id="contact_jeu_image" value="0" />';
+	}
+	else if(choix==3){ /* Publicité */
+		document.getElementById('msg').innerHTML='<br><div class="form_contact_contenu">Vous souhaitez mettre en avant vos jeux ou produits sur Jeuxclic.com.<br><br><div class="form_contact_titre">Votre message</div><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td width="6%"></td><td width="94%"><textarea class="form_contact_input_message" name="contact_message" id="contact_message"></textarea> <span id="contact_message_msg"></span></td></tr></table></div><br><br><input type="hidden" name="contact_id_jeu" id="contact_id_jeu" value="0" /><input type="hidden" name="contact_jeu_titre" id="contact_jeu_titre" value="0" /><input type="hidden" name="contact_jeu_description" id="contact_jeu_description" value="0" /><input type="hidden" name="contact_jeu_swf" id="contact_jeu_swf" value="0" /><input type="hidden" name="contact_jeu_image" id="contact_jeu_image" value="0" />';
+	}
+	else if(choix==5 && complement==0){ /* Problème sur un jeu - 1 */
+		document.getElementById('msg').innerHTML='<br><div class="form_contact_contenu">Vous n\'arrivez pas à jouer au jeu ou il ne fonctionne pas correctement ?<br><br>Dans un premier temps, merci de mettre à jour <a href="http://get.adobe.com/fr/flashplayer/" target="_blank" rel="nofollow">Flash Player</a>, <a href="http://get.adobe.com/fr/shockwave/" target="_blank" rel="nofollow">Shockwave</a> et <a href="http://unity3d.com/webplayer" target="_blank" rel="nofollow">Unity 3D</a>.<br>Veuillez ensuite redémarrer votre ordinateur et relancer le navigateur.<br><br>Si le problème persiste, merci de nous indiquer le <strong>problème précis</strong> que vous constatez ainsi que <strong>l\'ID du jeu</strong>.</span><br><br><div class="form_contact_titre">Votre message</div><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td width="6%"></td><td width="94%"><textarea class="form_contact_input_message" name="contact_message" id="contact_message"></textarea> <span id="contact_message_msg"></span></td></tr></table></div><br><input type="hidden" name="contact_id_jeu" id="contact_id_jeu" value="0" /><input type="hidden" name="contact_jeu_titre" id="contact_jeu_titre" value="0" /><input type="hidden" name="contact_jeu_description" id="contact_jeu_description" value="0" /><input type="hidden" name="contact_jeu_swf" id="contact_jeu_swf" value="0" /><input type="hidden" name="contact_jeu_image" id="contact_jeu_image" value="0" />';
+	}
+	else if(choix==5 && complement==1){ /* Problème sur un jeu - 2 (avec jeu inclus) */
+//		document.getElementById('msg').innerHTML='<br><div class="form_contact_contenu">Vous n\'arrivez pas à jouer au jeu ou il ne fonctionne pas correctement ?<br><br>Dans un premier temps, merci de mettre à jour <a href="http://get.adobe.com/fr/flashplayer/" target="_blank" rel="nofollow">Flash Player</a>, <a href="http://get.adobe.com/fr/shockwave/" target="_blank" rel="nofollow">Shockwave</a> et <a href="http://unity3d.com/webplayer" target="_blank" rel="nofollow">Unity 3D</a>.<br>Veuillez ensuite redémarrer votre ordinateur et relancer le navigateur.<br><br>Si le problème persiste, merci de nous indiquer le <strong>problème précis</strong>.</span><br><br><div class="form_contact_titre">Votre message</div><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td width="6%"></td><td width="94%"><textarea class="form_contact_input_message" name="contact_message" id="contact_message"></textarea> <span id="contact_message_msg"></span> </td></tr></table></div><br><input type="hidden" name="contact_id_jeu" id="contact_id_jeu" value="0" /><input type="hidden" name="contact_jeu_titre" id="contact_jeu_titre" value="0" /><input type="hidden" name="contact_jeu_description" id="contact_jeu_description" value="0" /><input type="hidden" name="contact_jeu_swf" id="contact_jeu_swf" value="0" /><input type="hidden" name="contact_jeu_image" id="contact_jeu_image" value="0" />';
+		if(userLang == 'fr-FR') document.getElementById('msg').innerHTML='<br><div class="form_contact_contenu">Vous n\'arrivez pas à jouer au jeu ou il ne fonctionne pas correctement ?<br><br>Dans un premier temps, merci de mettre à jour <a href="http://get.adobe.com/fr/flashplayer/" target="_blank" rel="nofollow">Flash Player</a>, <a href="http://get.adobe.com/fr/shockwave/" target="_blank" rel="nofollow">Shockwave</a> et <a href="http://unity3d.com/webplayer" target="_blank" rel="nofollow">Unity 3D</a>.<br>Veuillez ensuite redémarrer votre ordinateur et relancer le navigateur.<br><br>Si le problème persiste, merci de nous indiquer le <strong>problème précis</strong>.</span><br><br><div class="form_contact_titre">Votre message</div><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td width="6%"></td><td width="94%"><textarea class="form_contact_input_message" name="contact_message" id="contact_message"></textarea> <span id="contact_message_msg"></span> </td></tr></table></div><br><input type="hidden" name="contact_jeu_description" id="contact_jeu_description" value="0" /><input type="hidden" name="contact_jeu_swf" id="contact_jeu_swf" value="0" /><input type="hidden" name="contact_jeu_image" id="contact_jeu_image" value="0" />';
+		else document.getElementById('msg').innerHTML='<br><div class="form_contact_contenu"></span><br><br><div class="form_contact_titre"></div><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td width="6%"></td><td width="94%"><textarea class="form_contact_input_message" name="contact_message" id="contact_message"></textarea> <span id="contact_message_msg"></span> </td></tr></table></div><br><input type="hidden" name="contact_jeu_description" id="contact_jeu_description" value="0" /><input type="hidden" name="contact_jeu_swf" id="contact_jeu_swf" value="0" /><input type="hidden" name="contact_jeu_image" id="contact_jeu_image" value="0" />';
+	}
+	else { /* Demande d'information */
+		if(userLang == 'fr-FR') document.getElementById('msg').innerHTML='<br><p><label for="email" style="font-weight:bold; display:block; margin-bottom:1em;"><div class="form_contact_titre">Votre message</div></label></p><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td width="6%"></td><td width="94%"><textarea class="form_contact_input_message" name="contact_message" id="contact_message"></textarea> <span id="contact_message_msg"></span></td></tr></table><br><br><input type="hidden" name="contact_id_jeu" id="contact_id_jeu" value="0" /><input type="hidden" name="contact_jeu_titre" id="contact_jeu_titre" value="0" /><input type="hidden" name="contact_jeu_description" id="contact_jeu_description" value="0" /><input type="hidden" name="contact_jeu_swf" id="contact_jeu_swf" value="0" /><input type="hidden" name="contact_jeu_image" id="contact_jeu_image" value="0" /><div class="g-recaptcha" data-sitekey="6LeWmxATAAAAAEloCoOh2bDFKcrMKM1zKHtbx8wO"></div>';
+		else document.getElementById('msg').innerHTML='<br><p><label for="email" style="font-weight:bold; display:block; margin-bottom:1em;"><div class="form_contact_titre"></div></label></p><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td width="6%"></td><td width="94%"><textarea class="form_contact_input_message" name="contact_message" id="contact_message"></textarea> <span id="contact_message_msg"></span></td></tr></table><br><br><input type="hidden" name="contact_id_jeu" id="contact_id_jeu" value="0" /><input type="hidden" name="contact_jeu_titre" id="contact_jeu_titre" value="0" /><input type="hidden" name="contact_jeu_description" id="contact_jeu_description" value="0" /><input type="hidden" name="contact_jeu_swf" id="contact_jeu_swf" value="0" /><input type="hidden" name="contact_jeu_image" id="contact_jeu_image" value="0" /><div class="g-recaptcha" data-sitekey="6LeWmxATAAAAAEloCoOh2bDFKcrMKM1zKHtbx8wO"></div>';
+		
+		document.getElementById('contact_sujet_infos').checked = true;
+	}
+	
+	document.getElementById("button_send_contact").disabled = false;
+}
+
+
+
+<!-- Ajouter au favoris COOKIE -->
+function favorisadd(id) {
+
+var base_url = url.substring(0, xend);
+url = base_url + 'include/p_jeux/cookies_add.php?id=' + escape(id);
+newwindow=window.open(
+url,'name2', 'status=no, toolbar=no, scrollbars=yes, titlebar=no, menubar=no, resizable=no, width=1, height=1, directories=no, location=no');
+
+//document.getElementById('jeu_id_box').innerHTML='<strong>You changed me</strong>';
+document.getElementById('jeuxajoute').innerHTML='<strong><a href="categorie-jeux.php?cat=mes-jeux" title="Afficher mes jeux favoris">OK</a> !</strong><br>';
+// A FAIRE : jeux ajouté + lien + surbrillance lors de l'arrivé sur la page.
+
+if (window.focus) {newwindow.focus()}
+return false;
+
+}
+
+
+
+<!-- Supprimer des favoris COOKIE -->
+function favorissup(id) {
+
+var base_url = url.substring(0, xend);
+url = base_url + 'include/p_jeux/cookies_sup.php?id='+ escape(id);
+newwindow=window.open(
+url,'name3', 'status=no, toolbar=no, scrollbars=yes, titlebar=no, menubar=no, resizable=no, width=1, height=1, directories=no, location=no');
+
+//document.getElementById('jeu_id_box').innerHTML='<strong>You changed me</strong>';
+//document.getElementById('jeuxsupprime').innerHTML='<strong>Jeu supprim&eacute; de vos jeux favoris</strong><br>';
+// A mettre dans le code de la page de destination :
+// <div id=\"jeuxsupprime\" style=\"display:inline;\">AFFICHAGE ICI</div>
+
+if (window.focus) {newwindow.focus()}
+return false;
+
+}
+
+
+
+// Cookie enabled or not ?
+//===============================================
+function are_cookies_enabled() {
+    var cookieEnabled = (navigator.cookieEnabled) ? true : false;
+
+    if (typeof navigator.cookieEnabled == "undefined" && !cookieEnabled)
+    { 
+        document.cookie="testcookie";
+        cookieEnabled = (document.cookie.indexOf("testcookie") != -1) ? true : false;
+    }
+    return (cookieEnabled);
+}
+
+
+
+// Cookie enabled or not ?
+//===============================================
+/*
+function browserCheckin() {
+	if (navigator.userAgent.indexOf("Mozilla") > 0 ) browserName = "Mozilla" ;
+	if (navigator.userAgent.indexOf("MSIE") > 0 )	 browserName = "InternetExplorer";
+	if (navigator.userAgent.indexOf("Chrome") > 0)	 browserName= "Chrome" ; 
+	//var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+	if (navigator.userAgent.indexOf("Opera") > 0 ) 	 browserName = "Opera" ; 
+	//if (navigator.userAgent.indexOf("Safari") > -1) browserName = "Safari" ; 
+	var isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+	if (isSafari) browserName = "Safari";
+	
+	alert('browserName: '+browserName);
+	
+	return browserName;
+}
+*/
+
+
+
+// Detect browser
+//===============================================
+function browserCheckin() {
+
+	var nVer = navigator.appVersion;
+	var nAgt = navigator.userAgent;
+	var browserName  = navigator.appName;
+	
+	// In Opera, the true version is after "Opera" or after "Version"
+	// if ((verOffset=nAgt.indexOf("Opera"))!=-1) browserName = "Opera";
+	
+	if ((verOffset=nAgt.indexOf("OPR"))!=-1 || (verOffset=nAgt.indexOf("Opera"))!=-1) {
+	   browserName = "Opera";
+	}
+	// In MSIE, the true version is after "MSIE" in userAgent
+	/*
+	else if ((verOffset=nAgt.indexOf("MSIE"))!=-1) {
+	   browserName = "InternetExplorer";
+	}
+	*/
+	// In Chrome, the true version is after "Chrome" 
+	else if ((verOffset=nAgt.indexOf("Chrome"))!=-1) {
+	   browserName = "Chrome";
+	}
+	// In Safari, the true version is after "Safari" or after "Version" 
+	else if ((verOffset=nAgt.indexOf("Safari"))!=-1) {
+	   browserName = "Safari";
+	}
+	// In Firefox, the true version is after "Firefox" 
+	else if ((verOffset=nAgt.indexOf("Firefox"))!=-1) {
+		browserName = "Firefox";
+	}
+	// In most other browsers, "name/version" is at the end of userAgent 
+	else if ( (nameOffset=nAgt.lastIndexOf(' ')+1) < (verOffset=nAgt.lastIndexOf('/')) ) {
+		browserName = nAgt.substring(nameOffset,verOffset);
+		if (browserName.toLowerCase()==browserName.toUpperCase()) {
+		   browserName = navigator.appName;
+		}
+	}
+	else browserName = 'undefined';
+	
+	// IE
+	if(browserCheckinIE() == true) {
+		browserName = "InternetExplorer";
+	}
+	
+	return browserName;
+	
+}
+
+
+
+// Detect browser : IE
+//===============================================
+function browserCheckinIE() {
+	
+    var ms_ie = false;
+    var ua = window.navigator.userAgent;
+    var old_ie = ua.indexOf('MSIE ');
+    var new_ie = ua.indexOf('Trident/');
+
+    if ((old_ie > -1) || (new_ie > -1)) {
+        ms_ie = true;
+    }
+	
+	return ms_ie;
+	
+}
+
+
+
+// HTML to Javascript ?
+//===============================================
+function htmlEscape(str) {
+    return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+}
+
+
+
+// HTML to Javascript ?
+//===============================================
+function mask(obj) {
+	var el = document.getElementById(obj);
+	el.style.display = 'none';
+}
+
+
+
+// Index > First visit > Setcookie
+//===============================================
+/*function first_time_visit(name,stop_msg) {
+	
+	alert('first_time_visit='+name+' - '+stop_msg);
+
+}
+*/
+
+
+// Index > First time visit > Setcookie
+//===============================================
+function first_time_visit(name,stop_msg) {
+	
+	var value = 1;
+	var expiredays = 365;
+	
+	var exdate=new Date()
+	exdate.setDate(exdate.getDate()+expiredays)
+	// var new_game_id = escape(value);
+	// if(isNaN(new_game_id) == true) return; // sécurité
+	
+	var cookie_exists;
+    if(document.cookie.indexOf(name) == 0) cookie_exists = -1<document.cookie.indexOf(value?name+"="+value+";":name+"=");
+	//document.cookie = c_name+ "=" +value+ ((expiredays == null) ? "" : ";expires="+exdate.toGMTString() + ";domain=.jeuxclic.com;path=/")
+    //if(document.cookie.indexOf(name) == 0) cookie_exists = -1<document.cookie.indexOf(value?name+"="+value+";":name+"="+";domain=.jeuxclic.com;path=/");
+    else if(value && document.cookie.indexOf("; "+name+"="+value) + name.length + value.length + 3== document.cookie.length) cookie_exists = 1;
+    else { cookie_exists = -1<document.cookie.indexOf("; "+(value?name+"="+value + ";":name+"=")) }
+	if(test == 3) alert('cookie_exists:'+cookie_exists);
+	
+	var cookie_first_time_visit = GetCookie(name);
+	if(test == 3) alert('cookie_exists:'+cookie_first_time_visit);
+
+	if(cookie_first_time_visit != '' && cookie_first_time_visit !== 'undefined' && cookie_first_time_visit !== 'null' && cookie_first_time_visit) {
+		
+		//if(!cookie_first_time_visit) alert('cookie_first_time_visit dont exists !!!'); // cas impossible
+		
+		if(test == 3) alert('cookie_exists:'+cookie_first_time_visit);
+		
+		var cookie_first_time_visit = cookie_first_time_visit.split('|');
+		var nb_time_visited = cookie_first_time_visit[0];
+		if(stop_msg == 0) var stop_msg = cookie_first_time_visit[1];
+		nb_time_visited++;
+		
+		if (nb_time_visited > 0 && stop_msg == 0 && nb_time_visited < 15) {
+	 
+			//alert('cookie_first_time_visit:'+cookie_first_time_visit);
+			//alert("nb_time_visited:" + nb_time_visited+' - stop_msg:'+stop_msg);
+			// alert("Welcome again " + nb_time_visited);
+			//nb_time_visited++;
+			SetCookie(name, nb_time_visited+'|'+stop_msg);
+			
+			// A FAIRE 0 : if (nb_time_visited > 10) > Ne plus afficher.
+			
+			document.getElementById("premier_pas").className="info_box";	
+			document.getElementById("premier_pas").innerHTML = "Premiers pas ? <a href=\"c.php?p=premiers-pas\" target=\"_blank\">Découvrez en 1 minute comment jouer sur Jeuxclic</a>. <a href=\"javascript:void(0)\" onClick=\"mask(\'premier_pas\');first_time_visit(\'first_time_visit\',1)\"><span class=\"close_button\"><\/span><\/a>";
+			if(test == 3) alert("Welcome again (new nb_time_visited) " + nb_time_visited);
+	
+		}
+		else {
+			SetCookie(name, nb_time_visited+'|1');
+		}
+		
+	}
+	else {
+		//if (username != 0 && username != null) {}
+		SetCookie(name, "1|0"); 
+	    if(test == 3) alert("Première visite !");
+		document.getElementById("premier_pas").className="info_box";	
+		document.getElementById("premier_pas").innerHTML = "Premiers pas ? <a href=\"c.php?p=premiers-pas\" target=\"_blank\">Découvrez en 1 minute comment jouer sur Jeuxclic</a>. <a href=\"javascript:void(0)\" onClick=\"mask(\'premier_pas\');first_time_visit(\'first_time_visit\',1)\"><span class=\"close_button\"><\/span><\/a>";
+		
+	}
+
+}
+
+
+
+// Index > First cookie > Setcookie
+//===============================================
+function first_time_cookie(name,stop_msg) {
+	
+	if(test == 5) alert('first_time_cookie()');
+	
+	var value = 1;
+	var expiredays = 3650;
+	
+	var exdate=new Date()
+	exdate.setDate(exdate.getDate()+expiredays)
+	
+	var cookie_exists;
+    if(document.cookie.indexOf(name) == 0) cookie_exists = -1<document.cookie.indexOf(value?name+"="+value+";":name+"=");
+    else if(value && document.cookie.indexOf("; "+name+"="+value) + name.length + value.length + 3== document.cookie.length) cookie_exists = 1;
+    else { cookie_exists = -1<document.cookie.indexOf("; "+(value?name+"="+value + ";":name+"=")) }
+	if(test == 5) alert('cookie_exists:'+cookie_exists);
+	
+	var cookie_first_time_cookie = GetCookie(name);
+	if(test == 5) alert('cookie_exists:'+cookie_first_time_cookie);
+
+	if(cookie_first_time_cookie != '' && cookie_first_time_cookie !== 'undefined' && cookie_first_time_cookie !== 'null' && cookie_first_time_cookie) {
+		
+		if(!cookie_first_time_cookie) if(test == 5) alert('cookie_first_time_cookie dont exists !!!');
+		
+		if(test == 5) alert('cookie_exists:'+cookie_first_time_cookie);
+		
+		var cookie_first_time_cookie = cookie_first_time_cookie.split('|');
+		var nb_time_visited = cookie_first_time_cookie[0];
+		if(stop_msg == 0) var stop_msg = cookie_first_time_cookie[1];
+		nb_time_visited++;
+		
+		if (nb_time_visited > 0 && stop_msg == 0 && nb_time_visited < 1) {
+	 
+			//alert('cookie_first_time_cookie:'+cookie_first_time_cookie);
+			//alert("nb_time_visited:" + nb_time_visited+' - stop_msg:'+stop_msg);
+			// alert("Welcome again " + nb_time_visited);
+			//nb_time_visited++;
+			
+			SetCookie(name, nb_time_visited+'|'+stop_msg);
+			
+			// A FAIRE 0 : if (nb_time_visited > 10) > Ne plus afficher.
+
+			document.getElementById("premier_cookie").className="info_box";	
+						document.getElementById("premier_cookie").innerHTML = "En continuant la navigation sur ce site, vous acceptez les cookies nous permettant d'améliorer votre expérience sur Jeuxclic. <a href=\"c.php?p=cgu#cookies\" target=\"_blank\">En savoir plus.</a> <a href=\"javascript:void(0)\" onClick=\"mask(\'premier_cookie\');first_time_cookie(\'first_time_cookie\',1)\"><span class=\"close_button\"><\/span><\/a>";
+			if(test == 5) alert("Welcome again (new nb_time_visited) " + nb_time_visited);
+	
+		}
+		else {
+			SetCookie(name, nb_time_visited+'|1');
+		}
+		
+	}
+	else {
+		//if (username != 0 && username != null) {}
+		SetCookie(name, "1|0"); 
+	    if(test == 3) alert("Premier cookie !");
+		document.getElementById("premier_cookie").className="info_box";	
+		document.getElementById("premier_cookie").innerHTML = "En continuant la navigation sur ce site, vous acceptez les cookies nous permettant d'améliorer votre expérience sur Jeuxclic. <a href=\"c.php?p=cgu#cookies\" target=\"_blank\">En savoir plus.</a> <a href=\"javascript:void(0)\" onClick=\"mask(\'premier_cookie\');first_time_cookie(\'first_time_cookie\',1)\"><span class=\"close_button\"><\/span><\/a>";
+		
+	}
+
+	//setTimeout(function search_focus(){searchform.q.focus();},1);
+	
+}
+
+
+
+// Menu langue
+//===============================================
+function menu_language_redirection(language,link_redirection) {
+	alert('language:'+language+' - link_redirection:'+link_redirection);
+	SetCookie('menu_language',language);
+	location.href=link_redirection;
+}
+
+
+// Index > Redirection Mobile si pas de cookie
+//===============================================
+/*function desktop_or_mobile(screentype) { // desktop / mobile
+	
+	var test = 5;
+
+	var name = 'desktop_or_mobile';
+	if(test == 5) alert('desktop_or_mobile()');
+	
+	SetCookie(name, screentype);
+	if(test == 5) alert('Cookie:'+name+' - set to :'+screentype);
+	
+	var str = window.location.host;
+	if(test == 5) alert(str); // m.jeuxclic.com
+
+	if(screentype == 'mobile') var url_redirection = str.replace("www.", "m.");
+	else if(screentype == 'desktop') var url_redirection = str.replace("m.", "www.");
+	
+	var url_redirection = 'http://'+url_redirection+'/index_t.php';
+	
+	if(test == 5) alert('url_redirection:'+url_redirection);
+	
+	document.location.href = url_redirection;
+
+}*/
+
+
+
+// Detect flash player
+//===============================================
+function detect_flash_player() {
+	if(swfobject.hasFlashPlayerVersion("9.0.115")) {
+		if(userLang == 'fr-FR') document.getElementById('flash_player_detection_msg').innerHTML='<div class="diagnostic_ok">Flash player est activé.</div>';
+		else document.getElementById('flash_player_detection_msg').innerHTML='<div class="diagnostic_ok">Flash player not enabled.</div>';
+	}
+	else {
+		if(userLang == 'fr-FR') document.getElementById('flash_player_detection_msg').innerHTML='<div class="diagnostic_notok">Merci de <a href="https://get.adobe.com/flashplayer/" rel="nofollow" target="_blank">mettre à jour Flash player</a>.</div>';
+		else document.getElementById('flash_player_detection_msg').innerHTML='<div class="diagnostic_notok">Please <a href="https://get.adobe.com/flashplayer/" rel="nofollow" target="_blank">update Flash player</a>.</div>';
+	}
+}
+
+
+
+// Sticky Ads
+//===============================================
+window.onscroll = function() {
+    var sticky = document.getElementById('stickynav');
+    if( document.body.scrollTop+document.documentElement.scrollTop > 135) {
+        sticky.className = "stuck";
+		//alert('>240');
+	}
+    else {
+		sticky.className = "";
+		//alert('>240');
+	}
+};
+
+
+
+// Index > First visit > Flash player ? SWFObject v2.2 <http://code.google.com/p/swfobject/> MIT License
+//===============================================
+var swfobject=function(){var D="undefined",r="object",S="Shockwave Flash",W="ShockwaveFlash.ShockwaveFlash",q="application/x-shockwave-flash",R="SWFObjectExprInst",x="onreadystatechange",O=window,j=document,t=navigator,T=false,U=[h],o=[],N=[],I=[],l,Q,E,B,J=false,a=false,n,G,m=true,M=function(){var aa=typeof j.getElementById!=D&&typeof j.getElementsByTagName!=D&&typeof j.createElement!=D,ah=t.userAgent.toLowerCase(),Y=t.platform.toLowerCase(),ae=Y?/win/.test(Y):/win/.test(ah),ac=Y?/mac/.test(Y):/mac/.test(ah),af=/webkit/.test(ah)?parseFloat(ah.replace(/^.*webkit\/(\d+(\.\d+)?).*$/,"$1")):false,X=!+"\v1",ag=[0,0,0],ab=null;if(typeof t.plugins!=D&&typeof t.plugins[S]==r){ab=t.plugins[S].description;if(ab&&!(typeof t.mimeTypes!=D&&t.mimeTypes[q]&&!t.mimeTypes[q].enabledPlugin)){T=true;X=false;ab=ab.replace(/^.*\s+(\S+\s+\S+$)/,"$1");ag[0]=parseInt(ab.replace(/^(.*)\..*$/,"$1"),10);ag[1]=parseInt(ab.replace(/^.*\.(.*)\s.*$/,"$1"),10);ag[2]=/[a-zA-Z]/.test(ab)?parseInt(ab.replace(/^.*[a-zA-Z]+(.*)$/,"$1"),10):0}}else{if(typeof O.ActiveXObject!=D){try{var ad=new ActiveXObject(W);if(ad){ab=ad.GetVariable("$version");if(ab){X=true;ab=ab.split(" ")[1].split(",");ag=[parseInt(ab[0],10),parseInt(ab[1],10),parseInt(ab[2],10)]}}}catch(Z){}}}return{w3:aa,pv:ag,wk:af,ie:X,win:ae,mac:ac}}(),k=function(){if(!M.w3){return}if((typeof j.readyState!=D&&j.readyState=="complete")||(typeof j.readyState==D&&(j.getElementsByTagName("body")[0]||j.body))){f()}if(!J){if(typeof j.addEventListener!=D){j.addEventListener("DOMContentLoaded",f,false)}if(M.ie&&M.win){j.attachEvent(x,function(){if(j.readyState=="complete"){j.detachEvent(x,arguments.callee);f()}});if(O==top){(function(){if(J){return}try{j.documentElement.doScroll("left")}catch(X){setTimeout(arguments.callee,0);return}f()})()}}if(M.wk){(function(){if(J){return}if(!/loaded|complete/.test(j.readyState)){setTimeout(arguments.callee,0);return}f()})()}s(f)}}();function f(){if(J){return}try{var Z=j.getElementsByTagName("body")[0].appendChild(C("span"));Z.parentNode.removeChild(Z)}catch(aa){return}J=true;var X=U.length;for(var Y=0;Y<X;Y++){U[Y]()}}function K(X){if(J){X()}else{U[U.length]=X}}function s(Y){if(typeof O.addEventListener!=D){O.addEventListener("load",Y,false)}else{if(typeof j.addEventListener!=D){j.addEventListener("load",Y,false)}else{if(typeof O.attachEvent!=D){i(O,"onload",Y)}else{if(typeof O.onload=="function"){var X=O.onload;O.onload=function(){X();Y()}}else{O.onload=Y}}}}}function h(){if(T){V()}else{H()}}function V(){var X=j.getElementsByTagName("body")[0];var aa=C(r);aa.setAttribute("type",q);var Z=X.appendChild(aa);if(Z){var Y=0;(function(){if(typeof Z.GetVariable!=D){var ab=Z.GetVariable("$version");if(ab){ab=ab.split(" ")[1].split(",");M.pv=[parseInt(ab[0],10),parseInt(ab[1],10),parseInt(ab[2],10)]}}else{if(Y<10){Y++;setTimeout(arguments.callee,10);return}}X.removeChild(aa);Z=null;H()})()}else{H()}}function H(){var ag=o.length;if(ag>0){for(var af=0;af<ag;af++){var Y=o[af].id;var ab=o[af].callbackFn;var aa={success:false,id:Y};if(M.pv[0]>0){var ae=c(Y);if(ae){if(F(o[af].swfVersion)&&!(M.wk&&M.wk<312)){w(Y,true);if(ab){aa.success=true;aa.ref=z(Y);ab(aa)}}else{if(o[af].expressInstall&&A()){var ai={};ai.data=o[af].expressInstall;ai.width=ae.getAttribute("width")||"0";ai.height=ae.getAttribute("height")||"0";if(ae.getAttribute("class")){ai.styleclass=ae.getAttribute("class")}if(ae.getAttribute("align")){ai.align=ae.getAttribute("align")}var ah={};var X=ae.getElementsByTagName("param");var ac=X.length;for(var ad=0;ad<ac;ad++){if(X[ad].getAttribute("name").toLowerCase()!="movie"){ah[X[ad].getAttribute("name")]=X[ad].getAttribute("value")}}P(ai,ah,Y,ab)}else{p(ae);if(ab){ab(aa)}}}}}else{w(Y,true);if(ab){var Z=z(Y);if(Z&&typeof Z.SetVariable!=D){aa.success=true;aa.ref=Z}ab(aa)}}}}}function z(aa){var X=null;var Y=c(aa);if(Y&&Y.nodeName=="OBJECT"){if(typeof Y.SetVariable!=D){X=Y}else{var Z=Y.getElementsByTagName(r)[0];if(Z){X=Z}}}return X}function A(){return !a&&F("6.0.65")&&(M.win||M.mac)&&!(M.wk&&M.wk<312)}function P(aa,ab,X,Z){a=true;E=Z||null;B={success:false,id:X};var ae=c(X);if(ae){if(ae.nodeName=="OBJECT"){l=g(ae);Q=null}else{l=ae;Q=X}aa.id=R;if(typeof aa.width==D||(!/%$/.test(aa.width)&&parseInt(aa.width,10)<310)){aa.width="310"}if(typeof aa.height==D||(!/%$/.test(aa.height)&&parseInt(aa.height,10)<137)){aa.height="137"}j.title=j.title.slice(0,47)+" - Flash Player Installation";var ad=M.ie&&M.win?"ActiveX":"PlugIn",ac="MMredirectURL="+O.location.toString().replace(/&/g,"%26")+"&MMplayerType="+ad+"&MMdoctitle="+j.title;if(typeof ab.flashvars!=D){ab.flashvars+="&"+ac}else{ab.flashvars=ac}if(M.ie&&M.win&&ae.readyState!=4){var Y=C("div");X+="SWFObjectNew";Y.setAttribute("id",X);ae.parentNode.insertBefore(Y,ae);ae.style.display="none";(function(){if(ae.readyState==4){ae.parentNode.removeChild(ae)}else{setTimeout(arguments.callee,10)}})()}u(aa,ab,X)}}function p(Y){if(M.ie&&M.win&&Y.readyState!=4){var X=C("div");Y.parentNode.insertBefore(X,Y);X.parentNode.replaceChild(g(Y),X);Y.style.display="none";(function(){if(Y.readyState==4){Y.parentNode.removeChild(Y)}else{setTimeout(arguments.callee,10)}})()}else{Y.parentNode.replaceChild(g(Y),Y)}}function g(ab){var aa=C("div");if(M.win&&M.ie){aa.innerHTML=ab.innerHTML}else{var Y=ab.getElementsByTagName(r)[0];if(Y){var ad=Y.childNodes;if(ad){var X=ad.length;for(var Z=0;Z<X;Z++){if(!(ad[Z].nodeType==1&&ad[Z].nodeName=="PARAM")&&!(ad[Z].nodeType==8)){aa.appendChild(ad[Z].cloneNode(true))}}}}}return aa}function u(ai,ag,Y){var X,aa=c(Y);if(M.wk&&M.wk<312){return X}if(aa){if(typeof ai.id==D){ai.id=Y}if(M.ie&&M.win){var ah="";for(var ae in ai){if(ai[ae]!=Object.prototype[ae]){if(ae.toLowerCase()=="data"){ag.movie=ai[ae]}else{if(ae.toLowerCase()=="styleclass"){ah+=' class="'+ai[ae]+'"'}else{if(ae.toLowerCase()!="classid"){ah+=" "+ae+'="'+ai[ae]+'"'}}}}}var af="";for(var ad in ag){if(ag[ad]!=Object.prototype[ad]){af+='<param name="'+ad+'" value="'+ag[ad]+'" />'}}aa.outerHTML='<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"'+ah+">"+af+"</object>";N[N.length]=ai.id;X=c(ai.id)}else{var Z=C(r);Z.setAttribute("type",q);for(var ac in ai){if(ai[ac]!=Object.prototype[ac]){if(ac.toLowerCase()=="styleclass"){Z.setAttribute("class",ai[ac])}else{if(ac.toLowerCase()!="classid"){Z.setAttribute(ac,ai[ac])}}}}for(var ab in ag){if(ag[ab]!=Object.prototype[ab]&&ab.toLowerCase()!="movie"){e(Z,ab,ag[ab])}}aa.parentNode.replaceChild(Z,aa);X=Z}}return X}function e(Z,X,Y){var aa=C("param");aa.setAttribute("name",X);aa.setAttribute("value",Y);Z.appendChild(aa)}function y(Y){var X=c(Y);if(X&&X.nodeName=="OBJECT"){if(M.ie&&M.win){X.style.display="none";(function(){if(X.readyState==4){b(Y)}else{setTimeout(arguments.callee,10)}})()}else{X.parentNode.removeChild(X)}}}function b(Z){var Y=c(Z);if(Y){for(var X in Y){if(typeof Y[X]=="function"){Y[X]=null}}Y.parentNode.removeChild(Y)}}function c(Z){var X=null;try{X=j.getElementById(Z)}catch(Y){}return X}function C(X){return j.createElement(X)}function i(Z,X,Y){Z.attachEvent(X,Y);I[I.length]=[Z,X,Y]}function F(Z){var Y=M.pv,X=Z.split(".");X[0]=parseInt(X[0],10);X[1]=parseInt(X[1],10)||0;X[2]=parseInt(X[2],10)||0;return(Y[0]>X[0]||(Y[0]==X[0]&&Y[1]>X[1])||(Y[0]==X[0]&&Y[1]==X[1]&&Y[2]>=X[2]))?true:false}function v(ac,Y,ad,ab){if(M.ie&&M.mac){return}var aa=j.getElementsByTagName("head")[0];if(!aa){return}var X=(ad&&typeof ad=="string")?ad:"screen";if(ab){n=null;G=null}if(!n||G!=X){var Z=C("style");Z.setAttribute("type","text/css");Z.setAttribute("media",X);n=aa.appendChild(Z);if(M.ie&&M.win&&typeof j.styleSheets!=D&&j.styleSheets.length>0){n=j.styleSheets[j.styleSheets.length-1]}G=X}if(M.ie&&M.win){if(n&&typeof n.addRule==r){n.addRule(ac,Y)}}else{if(n&&typeof j.createTextNode!=D){n.appendChild(j.createTextNode(ac+" {"+Y+"}"))}}}function w(Z,X){if(!m){return}var Y=X?"visible":"hidden";if(J&&c(Z)){c(Z).style.visibility=Y}else{v("#"+Z,"visibility:"+Y)}}function L(Y){var Z=/[\\\"<>\.;]/;var X=Z.exec(Y)!=null;return X&&typeof encodeURIComponent!=D?encodeURIComponent(Y):Y}var d=function(){if(M.ie&&M.win){window.attachEvent("onunload",function(){var ac=I.length;for(var ab=0;ab<ac;ab++){I[ab][0].detachEvent(I[ab][1],I[ab][2])}var Z=N.length;for(var aa=0;aa<Z;aa++){y(N[aa])}for(var Y in M){M[Y]=null}M=null;for(var X in swfobject){swfobject[X]=null}swfobject=null})}}();return{registerObject:function(ab,X,aa,Z){if(M.w3&&ab&&X){var Y={};Y.id=ab;Y.swfVersion=X;Y.expressInstall=aa;Y.callbackFn=Z;o[o.length]=Y;w(ab,false)}else{if(Z){Z({success:false,id:ab})}}},getObjectById:function(X){if(M.w3){return z(X)}},embedSWF:function(ab,ah,ae,ag,Y,aa,Z,ad,af,ac){var X={success:false,id:ah};if(M.w3&&!(M.wk&&M.wk<312)&&ab&&ah&&ae&&ag&&Y){w(ah,false);K(function(){ae+="";ag+="";var aj={};if(af&&typeof af===r){for(var al in af){aj[al]=af[al]}}aj.data=ab;aj.width=ae;aj.height=ag;var am={};if(ad&&typeof ad===r){for(var ak in ad){am[ak]=ad[ak]}}if(Z&&typeof Z===r){for(var ai in Z){if(typeof am.flashvars!=D){am.flashvars+="&"+ai+"="+Z[ai]}else{am.flashvars=ai+"="+Z[ai]}}}if(F(Y)){var an=u(aj,am,ah);if(aj.id==ah){w(ah,true)}X.success=true;X.ref=an}else{if(aa&&A()){aj.data=aa;P(aj,am,ah,ac);return}else{w(ah,true)}}if(ac){ac(X)}})}else{if(ac){ac(X)}}},switchOffAutoHideShow:function(){m=false},ua:M,getFlashPlayerVersion:function(){return{major:M.pv[0],minor:M.pv[1],release:M.pv[2]}},hasFlashPlayerVersion:F,createSWF:function(Z,Y,X){if(M.w3){return u(Z,Y,X)}else{return undefined}},showExpressInstall:function(Z,aa,X,Y){if(M.w3&&A()){P(Z,aa,X,Y)}},removeSWF:function(X){if(M.w3){y(X)}},createCSS:function(aa,Z,Y,X){if(M.w3){v(aa,Z,Y,X)}},addDomLoadEvent:K,addLoadEvent:s,getQueryParamValue:function(aa){var Z=j.location.search||j.location.hash;if(Z){if(/\?/.test(Z)){Z=Z.split("?")[1]}if(aa==null){return L(Z)}var Y=Z.split("&");for(var X=0;X<Y.length;X++){if(Y[X].substring(0,Y[X].indexOf("="))==aa){return L(Y[X].substring((Y[X].indexOf("=")+1)))}}}return""},expressInstallCallback:function(){if(a){var X=c(R);if(X&&l){X.parentNode.replaceChild(l,X);if(Q){w(Q,true);if(M.ie&&M.win){l.style.display="block"}}if(E){E(B)}}a=false}}}}();
+
+
+
+
+
+
+	
+/*
+eval(function(p,a,c,k,e,d){e=function(c){return(c<a?'':e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--){d[e(c)]=k[c]||e(c)}k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1};while(c--){if(k[c]){p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c])}}return p}('B D(T,1n){6 L=D.1g;6 J=D.1g.N;6 P=(J>2)?L[2]:y;6 R=(J>3)?L[3]:y;6 Q=(J>4)?L[4]:y;6 W=(J>5)?L[5]:1r;9.z=T+"="+1s(1n)+((P==y)?"":("; P="+P.1t()))+((R==y)?"":("; R="+R))+((Q==y)?"":("; Q="+Q))+((W==1q)?"; W":"")}B 1o(Y){6 S=9.z.1j(";",Y);h(S==-1)S=9.z.N;X 1v(9.z.K(Y,S))}B 1l(T){6 Z=T+"=";6 1k=Z.N;6 1m=9.z.N;6 i=0;1p(i<1m){6 j=i+1k;h(9.z.K(i,j)==Z)X 1o(j);i=9.z.1j(" ",i)+1;h(i==0)1w}X y}B 1H(l,u,x,F,H){6 A=(x/4)*3;6 F=F;6 H=H;6 M=w.O;h(/I[\\/\\s](\\d+\\.\\d+)/.v(o.q)){6 7=9.b(\'g\').f.7;6 8=9.b(\'g\').f.8;h(7==\'1i%\'){6 7=F;6 8=H}6 7=c(7,10)+c(x,10);6 8=c(8,10)+c(A,10);h(7>1D&&7<M){9.b(\'g\').f.7=7+\'k\';e(0);9.b(\'g\').f.8=8+\'k\';e(0)}p{7=c(7)-c(x);8=c(8)-c(A)}}p h(/G[\\/\\s](\\d+\\.\\d+)/.v(o.q)){6 7=9.b(l).7;6 8=9.b(l).8;h(7==\'1i%\'){6 7=F;6 8=H}6 7=c(7,10)+c(x,10);6 8=c(8,10)+c(A,10);h(7>1h&&7<M){9.b(l).7=7;e(0);9.b(l).8=8;e(0)}p{7=c(7)-c(x);8=c(8)-c(A)}}p{6 7=9.b(\'g\').f.7;6 8=9.b(\'g\').f.8;6 7=c(7,10)+c(x,10);6 8=c(8,10)+c(A,10);h(7>1h&&7<M){9.b(\'g\').f.7=7+\'k\';e(0);9.b(\'g\').f.8=8+\'k\';e(0)}p{7=c(7)-c(x);8=c(8)-c(A)}}6 E=u+"|"+7+"|"+8;6 r=1a.r;6 C=r.K(0,r.18(\'/\'))+\'/\';6 t=13 17();t.16(t.1c()+(14*12*11*U));D(u,E,t,C)}B 1x(u){V=1l(u);h(V){a=V.1z(\'|\');6 u=a[0];6 7=a[1];6 8=a[2];6 1b=o.q.19();h(/I[\\/\\s](\\d+\\.\\d+)/.v(o.q)){9.b(\'g\').f.7=7+\'k\';e(0);9.b(\'g\').f.8=8+\'k\';e(0)}p h(/G[\\/\\s](\\d+\\.\\d+)/.v(o.q)){9.b(\'l\').7=7;e(0);9.b(\'l\').8=8;e(0)}p{9.b(\'g\').f.7=7+\'k\';e(0);9.b(\'g\').f.8=8+\'k\';e(0)}6 n=w.7;6 m=w.8}p{h(/I[\\/\\s](\\d+\\.\\d+)/.v(o.q)){9.b(\'g\').f.7=\'1d\';e(0);9.b(\'g\').f.8=\'1f\';e(0)}p h(/G[\\/\\s](\\d+\\.\\d+)/.v(o.q)){9.b(\'l\').7=1A;e(0);9.b(\'l\').8=1C;e(0)}p{9.b(\'g\').f.7=\'1d\';e(0);9.b(\'g\').f.8=\'1f\';e(0)}}}B 1B(l,u,7,8){6 1b=o.q.19();h(/I[\\/\\s](\\d+\\.\\d+)/.v(o.q)){9.b(\'g\').f.7=7+\'k\';e(0);9.b(\'g\').f.8=8+\'k\';e(0)}p h(/G[\\/\\s](\\d+\\.\\d+)/.v(o.q)){9.b(\'l\').7=7;e(0);9.b(\'l\').8=8;e(0)}p{9.b(\'g\').f.7=7+\'k\';e(0);9.b(\'g\').f.8=8+\'k\';e(0)}6 E=u+"|"+7+"|"+8;6 r=1a.r;6 C=r.K(0,r.18(\'/\'))+\'/\';6 t=13 17();t.16(t.1c()+(14*12*11*U));D(u,E,t,C)}B 1F(l,u){6 1b=o.q.19();h(/I[\\/\\s](\\d+\\.\\d+)/.v(o.q)){6 n=w.O;6 m=w.15;6 n=c(n,10)+c(-1e,10);6 m=c(m,10)+c(-1E,10);9.b(\'g\').f.7=n+\'k\';e(0);9.b(\'g\').f.8=m+\'k\';e(0)}p h(/G[\\/\\s](\\d+\\.\\d+)/.v(o.q)){6 n=w.O;6 m=w.15;6 n=c(n,10)+c(-1I,10);6 m=c(m,10)+c(-1G,10);9.b(\'l\').7=n;e(0);9.b(\'l\').8=m;e(0)}p{6 n=w.O;6 m=w.15;6 n=c(n,10)+c(-1e,10);6 m=c(m,10)+c(-1u,10);9.b(\'g\').f.7=n+\'k\';e(0);9.b(\'g\').f.8=m+\'k\';e(0);6 1y=o.q}6 E=u+"|"+n+"|"+m;6 r=1a.r;6 C=r.K(0,r.18(\'/\'))+\'/\';6 t=13 17();t.16(t.1c()+(14*12*11*U));D(u,E,t,C)}',62,107,'||||||var|width|height|document||getElementById|parseInt||void|style|flash|if|||px|anim|screenheight|screenwidth|navigator|else|userAgent|pathname||date_exp|id_games|test|screen|size|null|cookie|sizeh|function|myDomain|SetCookie|concatenation|widthorigine|MSIE|heightorigine|Firefox|argc|substring|argv|screenwidthmax|length|availWidth|expires|domain|path|endstr|name|1000|size_id_games|secure|return|offset|arg||3600|24|new|3650|availHeight|setTime|Date|lastIndexOf|toLowerCase|location|navigateur|getTime|968px|660|561px|arguments|340|100|indexOf|alen|GetCookie|clen|value|getCookieVal|while|true|false|escape|toGMTString|260|unescape|break|GetSize|navig|split|808|ResizeOrigine|561|330|300|Fullsize|250|Resize|650'.split('|'),0,{}))
+*/
